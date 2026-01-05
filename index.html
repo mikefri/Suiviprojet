@@ -10,26 +10,38 @@
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .details-container { display: none; }
         
-        /* Conteneur Redimensionnable */
-        .resizable-gantt {
-            resize: both; /* Permet le redimensionnement H et V */
-            overflow: auto; /* Obligatoire pour resize */
-            min-height: 400px;
-            min-width: 300px;
-            max-height: 85vh;
-            max-width: 100%;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 0.75rem;
-            position: relative;
-        }
+/* Conteneur principal du Gantt */
+.resizable-gantt {
+    resize: both;            /* Active le redimensionnement H et V */
+    overflow: auto;          /* Indispensable pour que le resize fonctionne */
+    min-height: 400px;
+    min-width: 300px;
+    max-height: 85vh;
+    max-width: 100%;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 0.75rem;
+    position: relative;
+}
 
-        /* Personnalisation de la poignée de redimensionnement (Chrome/Safari) */
-        .resizable-gantt::-webkit-resizer {
-            background-color: #4f46e5;
-            border: 3px solid white;
-            border-radius: 5px;
-        }
+/* Personnalisation de la poignée (Webkit : Chrome, Edge, Safari) */
+.resizable-gantt::-webkit-resizer {
+    /* Utilisation d'un SVG de 3 lignes diagonales couleur Indigo */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='21' y1='15' x2='15' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='10' x2='10' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='5' x2='5' y2='21'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-size: 14px;
+    background-color: transparent;
+}
+
+/* Fallback pour Firefox (ne supporte pas la personnalisation de la poignée) */
+@-moz-document url-prefix() {
+    .resizable-gantt {
+        border-bottom-right-radius: 0;
+        border-right: 3px double #4f46e5;
+        border-bottom: 3px double #4f46e5;
+    }
+}
 
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
