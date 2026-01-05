@@ -8,40 +8,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
     <style>
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
-        .details-container { display: none; }
         
-/* Conteneur principal du Gantt */
-.resizable-gantt {
-    resize: both;            /* Active le redimensionnement H et V */
-    overflow: auto;          /* Indispensable pour que le resize fonctionne */
-    min-height: 400px;
-    min-width: 300px;
-    max-height: 85vh;
-    max-width: 100%;
-    border: 2px solid #e2e8f0;
-    background: white;
-    border-radius: 0.75rem;
-    position: relative;
-}
+        /* Conteneur principal du Gantt - Pleine largeur */
+        .resizable-gantt {
+            resize: vertical;
+            overflow: auto;
+            min-height: 500px;
+            max-height: 85vh;
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 0.75rem;
+            position: relative;
+        }
 
-/* Personnalisation de la poignée (Webkit : Chrome, Edge, Safari) */
-.resizable-gantt::-webkit-resizer {
-    /* Utilisation d'un SVG de 3 lignes diagonales couleur Indigo */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='21' y1='15' x2='15' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='10' x2='10' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='5' x2='5' y2='21'%3E%3C/line%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: bottom right;
-    background-size: 14px;
-    background-color: transparent;
-}
-
-/* Fallback pour Firefox (ne supporte pas la personnalisation de la poignée) */
-@-moz-document url-prefix() {
-    .resizable-gantt {
-        border-bottom-right-radius: 0;
-        border-right: 3px double #4f46e5;
-        border-bottom: 3px double #4f46e5;
-    }
-}
+        .resizable-gantt::-webkit-resizer {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='21' y1='15' x2='15' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='10' x2='10' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='5' x2='5' y2='21'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: bottom right;
+            background-size: 14px;
+        }
 
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -49,126 +35,42 @@
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
 
-<nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
-    <h1 class="text-xl font-bold flex items-center gap-2">
-        <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> 
-        Pilotage Projet
-    </h1>
-    
-    <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition-all duration-300 opacity-0 italic">
-        </div>
-
-    <div class="flex gap-3">
-        <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config Token</button>
-        <button onclick="saveToGitHub()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold shadow-md transition">Forcer Sauvegarde</button>
-        <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition flex items-center gap-2">
-    <span>+</span> Nouveau Projet
-</button>
-    </div>
-</nav>
-
-    <main class="p-6 max-w-[1920px] mx-auto grid grid-cols-12 gap-6">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+            <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> 
+            Pilotage Projet
+        </h1>
         
-        <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <aside class="col-span-12 lg:col-span-3">
-            <div id="form-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
-                <h2 id="form-title" class="font-bold text-lg mb-5 border-b pb-2 text-slate-800">Nouveau Projet</h2>
-                <input type="hidden" id="p-id">
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nom du projet</label>
-                        <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Chantier Alpha">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Responsable</label>
-                        <input type="text" id="p-owner" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nom">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
-                        <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="À faire">À faire</option>
-                            <option value="En cours" selected>En cours</option>
-                            <option value="Terminé">Terminé</option>
-                            <option value="Bloqué">Bloqué</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Début</label>
-                            <input type="date" id="p-start" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fin</label>
-                            <input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
-                        </div>
-                    </div>
+        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition-all duration-300 opacity-0 italic"></div>
 
-                    <div class="flex flex-col gap-2 pt-4">
-                        <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">
-                            Ajouter au Planning
-                        </button>
-                        <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition">
-                            Supprimer le projet
-                        </button>
-                        <button id="btn-cancel" onclick="resetForm()" class="hidden w-full text-slate-500 py-2 text-sm font-semibold hover:text-slate-800 underline transition">
-                            Annuler les modifications
-                        </button>
-                    </div>
-                </div>
+        <div class="flex gap-3">
+            <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config</button>
+            <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition flex items-center gap-2">
+                <span>+</span> Nouveau Projet
+            </button>
+            <button onclick="saveToGitHub()" class="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 font-semibold shadow-md transition">Sauvegarder</button>
+        </div>
+    </nav>
 
-                <div id="config" class="hidden mt-6 pt-6 border-t border-slate-100">
-                    <label class="block text-xs font-bold mb-1 uppercase text-slate-400">GitHub Token</label>
-                    <input type="password" id="gh-token" class="w-full bg-slate-100 border rounded p-2 text-sm" placeholder="ghp_...">
-                    <button onclick="saveSettings()" class="w-full mt-2 bg-emerald-500 text-white py-2 rounded text-xs font-bold hover:bg-emerald-600">Enregistrer Token</button>
+    <main class="p-6 max-w-[1920px] mx-auto">
+        <section class="space-y-4">
+            <div class="flex justify-between items-center px-2">
+                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">Tirez le coin bleu en bas pour agrandir la vue</span>
+                <div class="flex gap-4 text-[11px] font-bold text-slate-500 uppercase bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                    <button onclick="changeView('Day')" class="px-3 py-1 hover:text-indigo-600 transition">Jour</button>
+                    <button onclick="changeView('Week')" class="px-3 py-1 hover:text-indigo-600 transition border-x border-slate-100">Semaine</button>
+                    <button onclick="changeView('Month')" class="px-3 py-1 hover:text-indigo-600 transition">Mois</button>
                 </div>
             </div>
-        </aside>
             
-
-        <section class="col-span-12 lg:col-span-9 space-y-4">
-             <div class="flex justify-between items-center px-2">
-                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">Tirez le coin bleu en bas à droite pour redimensionner</span>
-                <div class="flex gap-4 text-[11px] font-bold text-slate-500 uppercase">
-                    <button onclick="changeView('Day')" class="hover:text-indigo-600 transition">Jour</button>
-                    <button onclick="changeView('Week')" class="hover:text-indigo-600 transition">Semaine</button>
-                    <button onclick="changeView('Month')" class="hover:text-indigo-600 transition">Mois</button>
-                </div>
-            </div>
             <div id="gantt-container" class="resizable-gantt shadow-sm">
                 <div id="gantt-chart"></div>
             </div>
         </section>
     </main>
 
-    <button onclick="toggleHelp()" class="fixed bottom-6 right-6 w-12 h-12 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl font-bold hover:scale-110 transition-all z-50">?</button>
-
-    <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold uppercase tracking-tight text-sm">Comprendre le planning</h3>
-                <button onclick="toggleHelp()" class="text-2xl leading-none">&times;</button>
-            </div>
-            <div class="p-6 space-y-5 text-sm text-slate-600">
-                <div>
-                    <h4 class="font-bold text-slate-900 mb-1 italic underline">Couleurs & Progression</h4>
-                    <p>• <b>La zone colorée :</b> Avancement du projet.</p>
-                    <p>• <b>Couleur par responsable :</b> Chaque personne a sa propre couleur.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold text-slate-900 mb-1 italic underline">Interactions</h4>
-                    <p>• <b>Glisser :</b> Déplacez les barres pour changer les dates.</p>
-                    <p>• <b>Redimensionner :</b> Utilisez le coin bleu en bas à droite du cadre blanc.</p>
-                </div>
-            </div>
-            <div class="p-4 border-t text-right bg-slate-50">
-                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs uppercase tracking-widest">Fermer</button>
-            </div>
-        </div>
-    </div>
-
     <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <aside id="form-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md transform transition-all scale-95">
+        <aside id="form-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md">
             <div class="flex justify-between items-center mb-5 border-b pb-2">
                 <h2 id="form-title" class="font-bold text-lg text-slate-800">Nouveau Projet</h2>
                 <button onclick="closeForm()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
@@ -178,18 +80,72 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nom du projet</label>
-                    <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Responsable</label>
+                    <input type="text" id="p-owner" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Début</label>
+                        <input type="date" id="p-start" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fin</label>
+                        <input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
+                    <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
+                        <option value="À faire">À faire</option>
+                        <option value="En cours" selected>En cours</option>
+                        <option value="Terminé">Terminé</option>
+                        <option value="Bloqué">Bloqué</option>
+                    </select>
+                </div>
+
                 <div class="flex flex-col gap-2 pt-4">
-                    <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">
-                        Ajouter au Planning
-                    </button>
-                    <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition">
-                        Supprimer le projet
-                    </button>
+                    <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
+                    <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">Supprimer le projet</button>
+                </div>
+
+                <div id="config" class="hidden mt-4 pt-4 border-t border-slate-100">
+                    <label class="block text-[10px] font-bold mb-1 uppercase text-slate-400">GitHub Token</label>
+                    <input type="password" id="gh-token" class="w-full bg-slate-100 border rounded p-2 text-xs" placeholder="ghp_...">
+                    <button onclick="saveSettings()" class="w-full mt-2 bg-emerald-500 text-white py-2 rounded text-[10px] font-bold uppercase tracking-widest">Sauvegarder Token</button>
                 </div>
             </div>
         </aside>
+    </div>
+
+    <div id="delete-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-200">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4 text-red-600 font-bold text-xl">!</div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Supprimer le projet ?</h3>
+            <p class="text-sm text-slate-500 mb-6">Cette action est définitive.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Annuler</button>
+                <button onclick="confirmDeletion()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold shadow-md">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="toggleHelp()" class="fixed bottom-6 right-6 w-12 h-12 bg-white border border-slate-200 text-slate-600 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-slate-50 z-30 transition">?</button>
+
+    <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center font-bold uppercase text-sm">
+                <span>Aide</span>
+                <button onclick="toggleHelp()" class="text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-sm text-slate-600">
+                <p>• <b>Double-cliquez</b> sur une barre pour modifier.</p>
+                <p>• <b>Glissez</b> les barres pour changer les dates.</p>
+                <p>• Les couleurs sont générées par <b>Responsable</b>.</p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -197,6 +153,7 @@
         let projects = [];
         let gantt;
         let currentView = 'Day';
+        let projectToDelete = null;
 
         function getColor(name) {
             let hash = 0;
@@ -204,155 +161,29 @@
             return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
         }
 
-
-
-// Fonction pour ouvrir le formulaire (vide)
-function openForm() {
-    resetForm();
-    document.getElementById('form-overlay').classList.add('modal-active');
-}
-
-// Fonction pour fermer
-function closeForm() {
-    document.getElementById('form-overlay').classList.remove('modal-active');
-}
-        
-
-async function loadData() {
-    try {
-        const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-        if (res.ok) {
-            projects = await res.json();
-            renderGantt();
-            // On ne met rien dans save-status ici pour rester discret
-        }
-    } catch (e) { 
-        console.warn("Fichier data.json non trouvé."); 
-    }
-}
-
-        function renderGantt(view = currentView) {
-            currentView = view;
-            if (projects.length === 0) {
-                document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet.</p>';
-                return;
-            }
-            const tasks = projects.map(p => ({
-                id: p.id,
-                name: `${p.name} [${p.status}]`,
-                start: p.start,
-                end: p.end,
-                progress: p.status === 'Terminé' ? 100 : 50,
-                custom_class: 'bar-' + p.id
-            }));
-
-            document.getElementById('gantt-chart').innerHTML = '';
-            gantt = new Gantt("#gantt-chart", tasks, {
-                language: 'fr',
-                view_mode: view,
-                bar_height: 35,
-                padding: 18,
-                on_click: task => editProject(task.id),
-                on_date_change: (task, start, end) => {
-                    let p = projects.find(i => i.id === task.id);
-                    p.start = start.toISOString().split('T')[0];
-                    p.end = end.toISOString().split('T')[0];
-                    saveToGitHub(true); 
-                },
-                on_progress_change: (task, progress) => {
-                    let p = projects.find(i => i.id === task.id);
-                    if (progress === 100) p.status = "Terminé";
-                    else if (progress > 0 && p.status === "À faire") p.status = "En cours";
-                    saveToGitHub(true);
-                }
-            });
-
-            projects.forEach(p => {
-                const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
-                if(bar) bar.style.fill = getColor(p.owner);
-            });
-        }
-
-        // --- NOUVEAU : Observer pour le redimensionnement automatique ---
-        const resizeObserver = new ResizeObserver(() => {
-            if (gantt && projects.length > 0) {
-                // On rafraîchit le graphique sans perte de données
-                renderGantt(currentView);
-            }
-        });
-        resizeObserver.observe(document.getElementById('gantt-container'));
-        // ----------------------------------------------------------------
-
-function editProject(id) {
-    const p = projects.find(i => i.id === id);
-    if(!p) return;
-    
-    // On remplit les champs
-    document.getElementById('p-id').value = p.id;
-    document.getElementById('p-name').value = p.name;
-    document.getElementById('p-owner').value = p.owner;
-    document.getElementById('p-status').value = p.status;
-    document.getElementById('p-start').value = p.start;
-    document.getElementById('p-end').value = p.end;
-
-    document.getElementById('form-title').innerText = "Modifier Projet";
-    document.getElementById('btn-add').innerText = "Mettre à jour";
-    document.getElementById('btn-delete').classList.remove('hidden');
-    document.getElementById('btn-cancel').classList.add('hidden'); // Plus besoin de "Annuler", on ferme juste la modale
-
-    // ON OUVRE LA MODALE
-    document.getElementById('form-overlay').classList.add('modal-active');
-}
-
-let projectToDelete = null; // Variable temporaire pour stocker l'ID à supprimer
-
-// 1. Ouvre la modale au lieu de faire un confirm()
-function deleteProject() {
-    projectToDelete = document.getElementById('p-id').value;
-    if (projectToDelete) {
-        const modal = document.getElementById('delete-modal');
-        modal.classList.add('modal-active'); // On utilise la classe modal-active déjà créée
-    }
-}
-
-// 2. Ferme la modale sans rien faire
-function closeDeleteModal() {
-    document.getElementById('delete-modal').classList.remove('modal-active');
-    projectToDelete = null;
-}
-
-// 3. Exécute la suppression réelle
-function confirmDeletion() {
-    if (projectToDelete) {
-        projects = projects.filter(p => p.id !== projectToDelete);
-        renderGantt();
-        resetForm();
-        saveToGitHub(true);
-        closeDeleteModal();
-    }
-}
-
-        function addOrUpdateProject() {
-            const id = document.getElementById('p-id').value;
-            const pData = {
-                name: document.getElementById('p-name').value,
-                owner: document.getElementById('p-owner').value || 'Sans nom',
-                status: document.getElementById('p-status').value,
-                start: document.getElementById('p-start').value,
-                end: document.getElementById('p-end').value
-            };
-            if(!pData.name || !pData.start || !pData.end) return alert("Veuillez remplir le nom et les dates.");
-            
-            if(id) {
-                const index = projects.findIndex(i => i.id === id);
-                projects[index] = { ...projects[index], ...pData };
-            } else {
-                projects.push({ id: "ID-" + Date.now(), ...pData });
-            }
-            renderGantt();
+        // --- GESTION FORMULAIRE ---
+        function openForm() {
             resetForm();
-            saveToGitHub(true);
-            closeForm();
+            document.getElementById('form-overlay').classList.add('modal-active');
+        }
+
+        function closeForm() {
+            document.getElementById('form-overlay').classList.remove('modal-active');
+        }
+
+        function editProject(id) {
+            const p = projects.find(i => i.id === id);
+            if(!p) return;
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-owner').value = p.owner;
+            document.getElementById('p-status').value = p.status;
+            document.getElementById('p-start').value = p.start;
+            document.getElementById('p-end').value = p.end;
+            document.getElementById('form-title').innerText = "Modifier Projet";
+            document.getElementById('btn-add').innerText = "Mettre à jour";
+            document.getElementById('btn-delete').classList.remove('hidden');
+            document.getElementById('form-overlay').classList.add('modal-active');
         }
 
         function resetForm() {
@@ -364,52 +195,119 @@ function confirmDeletion() {
             document.getElementById('form-title').innerText = "Nouveau Projet";
             document.getElementById('btn-add').innerText = "Ajouter au Planning";
             document.getElementById('btn-delete').classList.add('hidden');
-            document.getElementById('btn-cancel').classList.add('hidden');
-            document.getElementById('form-container').classList.remove('ring-2', 'ring-indigo-500');
         }
 
+        // --- GESTION DONNEES ---
+        async function loadData() {
+            try {
+                const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+                if (res.ok) {
+                    projects = await res.json();
+                    renderGantt();
+                }
+            } catch (e) { console.warn("data.json non trouvé."); }
+        }
+
+        function renderGantt(view = currentView) {
+            currentView = view;
+            const chartEl = document.getElementById('gantt-chart');
+            if (projects.length === 0) {
+                chartEl.innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet enregistré.</p>';
+                return;
+            }
+            const tasks = projects.map(p => ({
+                id: p.id,
+                name: `${p.name} [${p.status}]`,
+                start: p.start,
+                end: p.end,
+                progress: p.status === 'Terminé' ? 100 : 50,
+                custom_class: 'bar-' + p.id
+            }));
+            chartEl.innerHTML = '';
+            gantt = new Gantt("#gantt-chart", tasks, {
+                language: 'fr',
+                view_mode: view,
+                bar_height: 35,
+                padding: 18,
+                on_click: task => editProject(task.id),
+                on_date_change: (task, start, end) => {
+                    let p = projects.find(i => i.id === task.id);
+                    p.start = start.toISOString().split('T')[0];
+                    p.end = end.toISOString().split('T')[0];
+                    saveToGitHub(true);
+                }
+            });
+            projects.forEach(p => {
+                const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
+                if(bar) bar.style.fill = getColor(p.owner);
+            });
+        }
+
+        function addOrUpdateProject() {
+            const id = document.getElementById('p-id').value;
+            const pData = {
+                name: document.getElementById('p-name').value,
+                owner: document.getElementById('p-owner').value || 'Sans nom',
+                status: document.getElementById('p-status').value,
+                start: document.getElementById('p-start').value,
+                end: document.getElementById('p-end').value
+            };
+            if(!pData.name || !pData.start || !pData.end) return alert("Nom et dates requis.");
+            if(id) {
+                const index = projects.findIndex(i => i.id === id);
+                projects[index] = { ...projects[index], ...pData };
+            } else {
+                projects.push({ id: "ID-" + Date.now(), ...pData });
+            }
+            renderGantt();
+            closeForm();
+            saveToGitHub(true);
+        }
+
+        // --- SUPPRESSION ---
+        function deleteProject() {
+            projectToDelete = document.getElementById('p-id').value;
+            if (projectToDelete) document.getElementById('delete-modal').classList.add('modal-active');
+        }
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('modal-active');
+        }
+        function confirmDeletion() {
+            projects = projects.filter(p => p.id !== projectToDelete);
+            renderGantt();
+            closeForm();
+            closeDeleteModal();
+            saveToGitHub(true);
+        }
+
+        // --- SAUVEGARDE GITHUB ---
         async function saveToGitHub(isAuto = false) {
-    const token = localStorage.getItem('gh_token');
-    if(!token) return isAuto ? null : alert("Aucun Token GitHub trouvé.");
-    
-    const statusLabel = document.getElementById('save-status');
-    
-    // On rend le badge visible et on met l'état "En cours"
-    statusLabel.style.opacity = "1";
-    statusLabel.innerText = "⏳ SAUVEGARDE...";
-    statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-300 opacity-100";
-    
-    try {
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-        const file = await res.json();
-        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
-            method: 'PUT',
-            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: "Mise à jour planning",
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
-                sha: file.sha
-            })
-        });
-
-        if(update.ok) {
-            // État Succès : Bordure verte
-            statusLabel.innerText = "✅ ENREGISTRÉ : " + new Date().toLocaleTimeString();
-            statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 transition-all duration-300 opacity-100";
-            
-            // On cache le badge après 5 secondes
-            setTimeout(() => { 
-                statusLabel.style.opacity = "0"; 
-            }, 5000);
+            const token = localStorage.getItem('gh_token');
+            if(!token) return isAuto ? null : alert("Token manquant.");
+            const statusLabel = document.getElementById('save-status');
+            statusLabel.innerText = "⏳ SAUVEGARDE...";
+            statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 opacity-100 transition-all";
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                const file = await res.json();
+                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Sync Planning",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
+                        sha: file.sha
+                    })
+                });
+                if(update.ok) {
+                    statusLabel.innerText = "✅ ENREGISTRÉ";
+                    statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 opacity-100 transition-all";
+                    setTimeout(() => statusLabel.style.opacity = "0", 3000);
+                }
+            } catch (e) { statusLabel.innerText = "❌ ERREUR SYNC"; }
         }
-    } catch (e) { 
-        // État Erreur : Bordure rouge
-        statusLabel.innerText = "❌ ERREUR DE SYNCHRO";
-        statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-red-200 bg-red-50 text-red-600 transition-all duration-300 opacity-100";
-    }
-}
 
         function changeView(v) { renderGantt(v); }
         function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
@@ -419,28 +317,10 @@ function confirmDeletion() {
             toggleConfig();
             loadData();
         }
+
+        const resizeObserver = new ResizeObserver(() => { if (gantt) renderGantt(); });
+        resizeObserver.observe(document.getElementById('gantt-container'));
         window.onload = loadData;
     </script>
-
-    <div id="delete-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 border border-slate-200">
-        <div class="p-6 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <span class="text-red-600 text-xl font-bold">!</span>
-            </div>
-            <h3 class="text-lg font-bold text-slate-900 mb-2">Supprimer le projet ?</h3>
-            <p class="text-sm text-slate-500 mb-6">Cette action est irréversible. Toutes les données liées à ce projet seront effacées.</p>
-            
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition">
-                    Annuler
-                </button>
-                <button onclick="confirmDeletion()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm shadow-md transition">
-                    Supprimer
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 </body>
 </html>
