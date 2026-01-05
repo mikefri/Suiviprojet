@@ -2,58 +2,86 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Pilotage de Projets Pro</title>
+    <title>Pilotage de Projets Pro - v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
     <style>
+        /* Couleurs des barres selon le statut */
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
-        .gantt .bar-progress { fill: #3b82f6; } /* Bleu pro */
+        /* Style des boutons et inputs */
+        input, select { border: 1px solid #e2e8f0 !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans">
 
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
         <h1 class="text-xl font-bold flex items-center gap-2">
-            <span class="bg-blue-600 text-white p-1.5 rounded-lg text-sm">GA</span> 
-            Suivi d'Engagements
+            <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> 
+            Gestionnaire d'Engagements
         </h1>
         <div class="flex gap-3">
             <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">Configuration</button>
-            <button onclick="saveToGitHub()" class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md transition">Enregistrer les modifs</button>
+            <button onclick="saveToGitHub()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 shadow-md transition font-semibold">Enregistrer sur GitHub</button>
         </div>
     </nav>
 
-    <main class="p-6 max-w-[1600px] mx-auto grid grid-cols-12 gap-6">
+    <main class="p-6 max-w-[1800px] mx-auto grid grid-cols-12 gap-6">
         
-        <div id="config" class="hidden col-span-12 bg-slate-800 text-white p-4 rounded-xl mb-4 flex gap-4 items-end">
-            <div class="flex-1">
-                <label class="block text-xs uppercase font-bold text-slate-400 mb-1">GitHub Token</label>
-                <input type="password" id="gh-token" class="w-full bg-slate-700 border-none rounded p-2 text-sm" placeholder="ghp_xxxx...">
+        <div id="config" class="hidden col-span-12 bg-slate-800 text-white p-6 rounded-xl mb-4 shadow-2xl border border-slate-700">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Paramètres de synchronisation</h3>
+            <div class="flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold mb-1">GitHub Personal Access Token (ghp_...)</label>
+                    <input type="password" id="gh-token" class="w-full bg-slate-700 border-none rounded p-2 text-sm text-white" placeholder="Collez votre code ghp ici">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-bold mb-1">Dépôt (Pseudo/Nom-du-Repo)</label>
+                    <input type="text" id="gh-repo" class="w-full bg-slate-700 border-none rounded p-2 text-sm text-white" placeholder="ex: mon-pseudo/mon-planning">
+                </div>
+                <button onclick="saveSettings()" class="bg-emerald-500 hover:bg-emerald-600 px-6 py-2 rounded text-sm font-bold transition">Valider</button>
             </div>
-            <div class="flex-1">
-                <label class="block text-xs uppercase font-bold text-slate-400 mb-1">Dépôt (Pseudo/Repo)</label>
-                <input type="text" id="gh-repo" class="w-full bg-slate-700 border-none rounded p-2 text-sm" placeholder="mon-pseudo/suivi-projets">
-            </div>
-            <button onclick="saveSettings()" class="bg-blue-500 px-4 py-2 rounded text-sm font-bold">OK</button>
         </div>
 
-        <aside class="col-span-12 lg:col-span-3 space-y-4">
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                <h2 class="font-bold text-lg mb-4">Nouveau Projet</h2>
-                <div class="space-y-3">
-                    <input type="text" id="p-name" placeholder="Nom du projet" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="text" id="p-owner" placeholder="Responsable" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="date" id="p-start" class="border p-2 rounded-lg text-sm">
-                        <input type="date" id="p-end" class="border p-2 rounded-lg text-sm">
+        <aside class="col-span-12 lg:col-span-3">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
+                <h2 class="font-bold text-lg mb-5 text-slate-800 border-b pb-2">Nouveau Projet</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nom du projet</label>
+                        <input type="text" id="p-name" class="w-full p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50" placeholder="ex: Kitting PRM">
                     </div>
-                    <button onclick="addProject()" class="w-full bg-slate-900 text-white py-2.5 rounded-lg font-bold hover:bg-slate-800 transition">Ajouter au Planning</button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Responsable</label>
+                        <input type="text" id="p-owner" class="w-full p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50" placeholder="Nom de la personne">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Statut actuel</label>
+                        <select id="p-status" class="w-full p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 cursor-pointer">
+                            <option value="À faire">⚪ À faire</option>
+                            <option value="En cours">🔵 En cours</option>
+                            <option value="Terminé">🟢 Terminé</option>
+                            <option value="Bloqué">🔴 Bloqué</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Début</label>
+                            <input type="date" id="p-start" class="w-full p-2 rounded-lg text-sm bg-slate-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Fin</label>
+                            <input type="date" id="p-end" class="w-full p-2 rounded-lg text-sm bg-slate-50">
+                        </div>
+                    </div>
+                    <button onclick="addProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition shadow-lg mt-4">
+                        Ajouter au Planning
+                    </button>
                 </div>
             </div>
         </aside>
 
-        <section class="col-span-12 lg:col-span-9 bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <section class="col-span-12 lg:col-span-9 bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
             <div id="gantt-chart" class="w-full overflow-x-auto"></div>
         </section>
 
@@ -63,7 +91,15 @@
         let projects = [];
         let gantt;
 
-        // Charger les données
+        // Générateur de couleurs par nom pour les responsables
+        function getColor(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
+        }
+
         async function loadData() {
             const repo = localStorage.getItem('gh_repo');
             if(!repo) return;
@@ -72,28 +108,41 @@
                 const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/data.json?t=${Date.now()}`);
                 projects = await res.json();
                 renderGantt();
-            } catch (e) { console.error("Erreur de chargement", e); }
+            } catch (e) { console.warn("Données non trouvées ou dépôt vide."); }
         }
 
         function renderGantt() {
-            if (projects.length === 0) return;
+            if (projects.length === 0) {
+                document.getElementById('gantt-chart').innerHTML = '<p class="text-slate-400 p-10 text-center">Aucun projet à afficher. Utilisez le formulaire à gauche.</p>';
+                return;
+            }
+
             const tasks = projects.map(p => ({
                 id: p.id,
-                name: `${p.name} [${p.owner}]`,
+                name: `${p.name} (${p.status})`,
                 start: p.start,
                 end: p.end,
-                progress: 100
+                progress: p.status === 'Terminé' ? 100 : (p.status === 'En cours' ? 50 : 10),
+                custom_class: 'bar-color-' + p.id // On va injecter la couleur après
             }));
 
             document.getElementById('gantt-chart').innerHTML = '';
             gantt = new Gantt("#gantt-chart", tasks, {
                 language: 'fr',
                 view_mode: 'Day',
+                bar_height: 35,
+                padding: 18,
                 on_date_change: (task, start, end) => {
                     let p = projects.find(i => i.id === task.id);
                     p.start = start.toISOString().split('T')[0];
                     p.end = end.toISOString().split('T')[0];
                 }
+            });
+
+            // Injection des couleurs personnalisées par responsable
+            projects.forEach(p => {
+                const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
+                if(bar) bar.style.fill = getColor(p.owner);
             });
         }
 
@@ -101,41 +150,55 @@
             const p = {
                 id: "ID-" + Date.now(),
                 name: document.getElementById('p-name').value,
-                owner: document.getElementById('p-owner').value,
+                owner: document.getElementById('p-owner').value || 'Inconnu',
+                status: document.getElementById('p-status').value,
                 start: document.getElementById('p-start').value,
                 end: document.getElementById('p-end').value
             };
-            if(!p.name || !p.start || !p.end) return alert("Remplissez tout !");
+            if(!p.name || !p.start || !p.end) return alert("Veuillez remplir le nom et les deux dates.");
             projects.push(p);
             renderGantt();
+            
+            // Reset du nom pour saisie suivante
+            document.getElementById('p-name').value = '';
         }
 
         async function saveToGitHub() {
             const token = localStorage.getItem('gh_token');
             const repo = localStorage.getItem('gh_repo');
-            if(!token || !repo) return alert("Configurez le token d'abord !");
+            if(!token || !repo) return alert("Veuillez d'abord remplir la Configuration.");
 
-            const res = await fetch(`https://api.github.com/repos/${repo}/contents/data.json`, {
-                headers: { 'Authorization': `token ${token}` }
-            });
-            const file = await res.json();
+            try {
+                // 1. Récupérer le SHA du fichier existant
+                const res = await fetch(`https://api.github.com/repos/${repo}/contents/data.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                const file = await res.json();
 
-            await fetch(`https://api.github.com/repos/${repo}/contents/data.json`, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: "Update projects",
-                    content: btoa(JSON.stringify(projects, null, 2)),
-                    sha: file.sha
-                })
-            });
-            alert("Enregistré sur GitHub !");
+                // 2. Envoyer la mise à jour
+                const update = await fetch(`https://api.github.com/repos/${repo}/contents/data.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Mise à jour du planning",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
+                        sha: file.sha || ""
+                    })
+                });
+
+                if(update.ok) alert("✅ Enregistré avec succès sur GitHub !");
+                else alert("❌ Erreur lors de l'enregistrement.");
+            } catch (e) {
+                alert("Erreur de connexion à GitHub. Vérifiez votre Token et le nom du dépôt.");
+            }
         }
 
         function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
+        
         function saveSettings() {
             localStorage.setItem('gh_token', document.getElementById('gh-token').value);
             localStorage.setItem('gh_repo', document.getElementById('gh-repo').value);
+            alert("Paramètres enregistrés dans ce navigateur.");
             toggleConfig();
             loadData();
         }
