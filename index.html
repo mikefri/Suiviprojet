@@ -135,7 +135,7 @@
                 
                 const select = document.getElementById('p-owner');
                 select.innerHTML = responsables.length > 0 
-                    ? responsables.map(r => `<option value="${r}">${r}</option>`).join('')
+                    select.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
                     : '<option value="Non assigné">Aucun responsable</option>';
 
                 // 2. Charger Projets
@@ -153,7 +153,7 @@
 
             const tasks = projects.map(p => ({
                 id: p.id,
-                name: `${p.name} (${p.owner}) - ${p.progress || 0}%`,
+                name: `${p.name} (${dec(p.owner)}) - ${p.progress || 0}%`,
                 start: p.start, end: p.end, progress: p.progress || 0,
                 custom_class: 'bar-' + p.id
             }));
