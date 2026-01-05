@@ -184,19 +184,30 @@
                 custom_class: 'bar-' + p.id
             }));
             document.getElementById('gantt-chart').innerHTML = '';
-            gantt = new Gantt("#gantt-chart", tasks, {
-                language: 'fr',
-                view_mode: view,
-                bar_height: 35,
-                padding: 18,
-                on_click: task => editProject(task.id),
-                on_date_change: (task, start, end) => {
-                    let p = projects.find(i => i.id === task.id);
-                    p.start = start.toISOString().split('T')[0];
-                    p.end = end.toISOString().split('T')[0];
-                    saveToGitHub(true); 
-                }
-            });
+gantt = new Gantt("#gantt-chart", tasks, {
+    language: 'fr',
+    view_mode: view,
+    bar_height: 35,
+    padding: 18,
+    on_click: task => editProject(task.id),
+    // SAUVEGARDE QUAND ON DÉPLACE LA BARRE (DATES)
+    on_date_change: (task, start, end) => {
+        let p = projects.find(i => i.id === task.id);
+        p.start = start.toISOString().split('T')[0];
+        p.end = end.toISOString().split('T')[0];
+        saveToGitHub(true); 
+    },
+    // AJOUT : SAUVEGARDE QUAND ON MODIFIE LA PROGRESSION (COULEUR)
+    on_progress_change: (task, progress) => {
+        let p = projects.find(i => i.id === task.id);
+        // Si on change la progression à la main, on peut aussi 
+        // décider que cela change le statut si c'est à 100%
+        if (progress === 100) p.status = "Terminé";
+        else if (progress > 0 && p.status === "À faire") p.status = "En cours";
+        
+        saveToGitHub(true); // Déclenche la sauvegarde sur GitHub
+    }
+});
             projects.forEach(p => {
                 const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
                 if(bar) bar.style.fill = getColor(p.owner);
