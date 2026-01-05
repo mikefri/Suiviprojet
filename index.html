@@ -42,7 +42,7 @@
         </h1>
         
         <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition-all duration-300 opacity-0 italic"></div>
-
+        
         <div class="flex gap-3">
             <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config</button>
             <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition flex items-center gap-2">
@@ -98,6 +98,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
+                    <input type="number" id="p-progress" min="0" max="100" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
                     <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
                         <option value="À faire">À faire</option>
                         <option value="En cours" selected>En cours</option>
@@ -209,53 +210,55 @@
         }
 
 function renderGantt(view = currentView) {
-            currentView = view;
-            const chartEl = document.getElementById('gantt-chart');
-            if (projects.length === 0) {
-                chartEl.innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet enregistré.</p>';
-                return;
-            }
+    currentView = view;
+    const chartEl = document.getElementById('gantt-chart');
+    if (projects.length === 0) {
+        chartEl.innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet enregistré.</p>';
+        return;
+    }
 
-            const tasks = projects.map(p => {
-                // Calcul du pourcentage basé sur le statut
-                let progress = 0;
-                if (p.status === 'Terminé') progress = 100;
-                else if (p.status === 'En cours') progress = 50;
-                else if (p.status === 'À faire') progress = 0;
-                else if (p.status === 'Bloqué') progress = 10;
+    const tasks = projects.map(p => ({
+        id: p.id,
+        // Utilise p.progress s'il existe, sinon 0
+        name: `${p.name} (${p.owner}) - ${p.progress || 0}%`,
+        start: p.start,
+        end: p.end,
+        progress: p.progress || 0,
+        custom_class: 'bar-' + p.id
+    }));
 
-                return {
-                    id: p.id,
-                    // Affichage : "Nom du projet (Responsable) - 50%"
-                    name: `${p.name} (${p.owner}) - ${progress}%`,
-                    start: p.start,
-                    end: p.end,
-                    progress: progress,
-                    custom_class: 'bar-' + p.id
-                };
-            });
+    chartEl.innerHTML = '';
+    gantt = new Gantt("#gantt-chart", tasks, {
+        language: 'fr',
+        view_mode: view,
+        bar_height: 40,
+        padding: 18,
+        on_click: task => editProject(task.id),
+        
+        // QUAND ON BOUGE LA BARRE (DATES)
+        on_date_change: (task, start, end) => {
+            let p = projects.find(i => i.id === task.id);
+            p.start = start.toISOString().split('T')[0];
+            p.end = end.toISOString().split('T')[0];
+            renderGantt(); // Relancer le rendu pour mettre à jour le texte
+            saveToGitHub(true); // Sauvegarde auto
+        },
 
-            chartEl.innerHTML = '';
-            gantt = new Gantt("#gantt-chart", tasks, {
-                language: 'fr',
-                view_mode: view,
-                bar_height: 40, // Augmenté légèrement pour la lisibilité du texte
-                padding: 18,
-                on_click: task => editProject(task.id),
-                on_date_change: (task, start, end) => {
-                    let p = projects.find(i => i.id === task.id);
-                    p.start = start.toISOString().split('T')[0];
-                    p.end = end.toISOString().split('T')[0];
-                    saveToGitHub(true);
-                }
-            });
-
-            // Application de la couleur personnalisée par responsable
-            projects.forEach(p => {
-                const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
-                if(bar) bar.style.fill = getColor(p.owner);
-            });
+        // QUAND ON BOUGE LE CURSEUR DE PROGRESSION (POURCENTAGE)
+        on_progress_change: (task, progress) => {
+            let p = projects.find(i => i.id === task.id);
+            p.progress = progress;
+            renderGantt(); // Met à jour le texte "- 50%" instantanément
+            saveToGitHub(true); // Sauvegarde auto
         }
+    });
+
+    // Colorisation des barres
+    projects.forEach(p => {
+        const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
+        if(bar) bar.style.fill = getColor(p.owner);
+    });
+}
 
         function addOrUpdateProject() {
             const id = document.getElementById('p-id').value;
