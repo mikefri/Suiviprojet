@@ -257,15 +257,33 @@ async function loadData() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteProject() {
-            const id = document.getElementById('p-id').value;
-            if(id && confirm("Voulez-vous vraiment supprimer ce projet ?")) {
-                projects = projects.filter(p => p.id !== id);
-                renderGantt();
-                resetForm();
-                saveToGitHub(true);
-            }
-        }
+let projectToDelete = null; // Variable temporaire pour stocker l'ID à supprimer
+
+// 1. Ouvre la modale au lieu de faire un confirm()
+function deleteProject() {
+    projectToDelete = document.getElementById('p-id').value;
+    if (projectToDelete) {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('modal-active'); // On utilise la classe modal-active déjà créée
+    }
+}
+
+// 2. Ferme la modale sans rien faire
+function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('modal-active');
+    projectToDelete = null;
+}
+
+// 3. Exécute la suppression réelle
+function confirmDeletion() {
+    if (projectToDelete) {
+        projects = projects.filter(p => p.id !== projectToDelete);
+        renderGantt();
+        resetForm();
+        saveToGitHub(true);
+        closeDeleteModal();
+    }
+}
 
         function addOrUpdateProject() {
             const id = document.getElementById('p-id').value;
@@ -355,5 +373,26 @@ async function loadData() {
         }
         window.onload = loadData;
     </script>
+
+    <div id="delete-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 border border-slate-200">
+        <div class="p-6 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <span class="text-red-600 text-xl font-bold">!</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Supprimer le projet ?</h3>
+            <p class="text-sm text-slate-500 mb-6">Cette action est irréversible. Toutes les données liées à ce projet seront effacées.</p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition">
+                    Annuler
+                </button>
+                <button onclick="confirmDeletion()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm shadow-md transition">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
