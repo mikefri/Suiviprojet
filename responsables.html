@@ -109,45 +109,56 @@
 
         // --- SAUVEGARDE SUR GITHUB ---
         async function saveToGitHub() {
-            const token = localStorage.getItem('gh_token');
-            if(!token) {
-                alert("Token GitHub manquant. Configurez-le sur la page Planning.");
-                return;
-            }
+    const token = localStorage.getItem('gh_token');
+    if(!token) {
+        alert("Token GitHub manquant. Configurez-le sur la page Planning.");
+        return;
+    }
+    
+    const statusLabel = document.getElementById('save-status');
+    statusLabel.innerText = "⏳ SYNCHRONISATION...";
+    statusLabel.style.opacity = "1";
+
+    try {
+        // 1. Récupérer le SHA du fichier actuel pour autoriser l'écriture
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!res.ok) throw new Error("Erreur lors de la récupération du fichier");
+        const file = await res.json();
+        
+        // 2. Envoyer la mise à jour (utilise la variable locale 'responsables' mise à jour)
+        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `token ${token}`, 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                message: "Mise à jour responsables (encodés)",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
+                sha: file.sha
+            })
+        });
+
+        if(update.ok) {
+            statusLabel.innerText = "✅ ENREGISTRÉ";
             
-            const statusLabel = document.getElementById('save-status');
-            statusLabel.innerText = "⏳ SYNCHRONISATION...";
-            statusLabel.style.opacity = "1";
-
-            try {
-                // Récupérer le SHA du fichier actuel
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                const file = await res.json();
-                
-                // Envoyer la mise à jour
-                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: "Mise à jour responsables (encodés)",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-
-                if(update.ok) {
-                    statusLabel.innerText = "✅ ENREGISTRÉ";
-                    setTimeout(() => statusLabel.style.opacity = "0", 2000);
-                } else {
-                    throw new Error();
-                }
-            } catch (e) {
-                statusLabel.innerText = "❌ ERREUR";
-                console.error(e);
-            }
+            // IMPORTANT : On ne recharge PAS loadAllData() ou loadResponsables() ici.
+            // On fait confiance à la variable locale 'responsables' que l'on vient d'afficher.
+            
+            setTimeout(() => {
+                statusLabel.style.opacity = "0";
+            }, 2000);
+        } else {
+            throw new Error("Échec de la mise à jour GitHub");
         }
+    } catch (e) {
+        statusLabel.innerText = "❌ ERREUR";
+        console.error("Détails de l'erreur :", e);
+    }
+}
 
         window.onload = loadRespos;
     </script>
