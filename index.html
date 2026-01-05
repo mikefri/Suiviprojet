@@ -61,11 +61,15 @@
     <div class="flex gap-3">
         <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config Token</button>
         <button onclick="saveToGitHub()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold shadow-md transition">Forcer Sauvegarde</button>
+        <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition flex items-center gap-2">
+    <span>+</span> Nouveau Projet
+</button>
     </div>
 </nav>
 
     <main class="p-6 max-w-[1920px] mx-auto grid grid-cols-12 gap-6">
         
+        <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <aside class="col-span-12 lg:col-span-3">
             <div id="form-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
                 <h2 id="form-title" class="font-bold text-lg mb-5 border-b pb-2 text-slate-800">Nouveau Projet</h2>
@@ -120,6 +124,7 @@
                 </div>
             </div>
         </aside>
+            
 
         <section class="col-span-12 lg:col-span-9 space-y-4">
              <div class="flex justify-between items-center px-2">
@@ -162,6 +167,31 @@
         </div>
     </div>
 
+    <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
+        <aside id="form-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md transform transition-all scale-95">
+            <div class="flex justify-between items-center mb-5 border-b pb-2">
+                <h2 id="form-title" class="font-bold text-lg text-slate-800">Nouveau Projet</h2>
+                <button onclick="closeForm()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            
+            <input type="hidden" id="p-id">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nom du projet</label>
+                    <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex flex-col gap-2 pt-4">
+                    <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">
+                        Ajouter au Planning
+                    </button>
+                    <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition">
+                        Supprimer le projet
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
         let projects = [];
@@ -173,6 +203,20 @@
             for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
             return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
         }
+
+
+
+// Fonction pour ouvrir le formulaire (vide)
+function openForm() {
+    resetForm();
+    document.getElementById('form-overlay').classList.add('modal-active');
+}
+
+// Fonction pour fermer
+function closeForm() {
+    document.getElementById('form-overlay').classList.remove('modal-active');
+}
+        
 
 async function loadData() {
     try {
@@ -239,23 +283,26 @@ async function loadData() {
         resizeObserver.observe(document.getElementById('gantt-container'));
         // ----------------------------------------------------------------
 
-        function editProject(id) {
-            const p = projects.find(i => i.id === id);
-            if(!p) return;
-            document.getElementById('p-id').value = p.id;
-            document.getElementById('p-name').value = p.name;
-            document.getElementById('p-owner').value = p.owner;
-            document.getElementById('p-status').value = p.status;
-            document.getElementById('p-start').value = p.start;
-            document.getElementById('p-end').value = p.end;
+function editProject(id) {
+    const p = projects.find(i => i.id === id);
+    if(!p) return;
+    
+    // On remplit les champs
+    document.getElementById('p-id').value = p.id;
+    document.getElementById('p-name').value = p.name;
+    document.getElementById('p-owner').value = p.owner;
+    document.getElementById('p-status').value = p.status;
+    document.getElementById('p-start').value = p.start;
+    document.getElementById('p-end').value = p.end;
 
-            document.getElementById('form-title').innerText = "Modifier Projet";
-            document.getElementById('btn-add').innerText = "Mettre à jour";
-            document.getElementById('btn-delete').classList.remove('hidden');
-            document.getElementById('btn-cancel').classList.remove('hidden');
-            document.getElementById('form-container').classList.add('ring-2', 'ring-indigo-500');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+    document.getElementById('form-title').innerText = "Modifier Projet";
+    document.getElementById('btn-add').innerText = "Mettre à jour";
+    document.getElementById('btn-delete').classList.remove('hidden');
+    document.getElementById('btn-cancel').classList.add('hidden'); // Plus besoin de "Annuler", on ferme juste la modale
+
+    // ON OUVRE LA MODALE
+    document.getElementById('form-overlay').classList.add('modal-active');
+}
 
 let projectToDelete = null; // Variable temporaire pour stocker l'ID à supprimer
 
@@ -305,6 +352,7 @@ function confirmDeletion() {
             renderGantt();
             resetForm();
             saveToGitHub(true);
+            closeForm();
         }
 
         function resetForm() {
