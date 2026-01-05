@@ -43,17 +43,9 @@
     "id": "ID-1767641736140",
     "name": "Supermarché",
     "owner": "frischherz",
-    "status": "En cours",
-    "start": "2026-01-16",
-    "end": "2026-02-20"
-  },
-  {
-    "id": "ID-1767643441468",
-    "name": "Supermarché",
-    "owner": "lou",
-    "status": "En cours",
-    "start": "2026-01-04",
-    "end": "2026-01-28",
-    "progress": 99
+    "status": "À faire",
+    "start": "2026-01-20",
+    "end": "2026-02-20",
+    "progress": 0
   }
 ]
