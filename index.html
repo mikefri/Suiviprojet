@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Suivi de Projet Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        .container { padding: 20px; }
+        #gantt-target { background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Suivi d'Engagements</h1>
+        <div id="gantt-target"></div>
+    </div>
+
+    <script>
+        const tasks = [
+            {
+                id: 'Task 1',
+                name: 'Design Interface',
+                start: '2026-01-05',
+                end: '2026-01-10',
+                progress: 50,
+                dependencies: '',
+                custom_class: 'bar-milestone' // Optionnel pour le style
+            },
+            {
+                id: 'Task 2',
+                name: 'Développement API',
+                start: '2026-01-11',
+                end: '2026-01-20',
+                progress: 20,
+                dependencies: 'Task 1'
+            }
+        ];
+
+        const gantt = new Gantt("#gantt-target", tasks, {
+            language: 'fr',
+            view_mode: 'Day', // Peut être Day, Week, Month
+            on_click: task => console.log(task),
+        });
+    </script>
+</body>
+</html>
