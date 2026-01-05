@@ -150,31 +150,52 @@ async function addTask() {
         }
 
         async function saveToGitHub() {
-            const token = localStorage.getItem('gh_token');
-            if(!token) return alert("Configurez votre token sur la page planning.");
-            
-            const statusLabel = document.getElementById('save-status');
-            statusLabel.innerText = "⏳ SYNCHRONISATION..."; statusLabel.style.opacity = "1";
+    const token = localStorage.getItem('gh_token');
+    if (!token) return alert("Configurez votre token sur la page planning.");
+    
+    const statusLabel = document.getElementById('save-status');
+    statusLabel.innerText = "⏳ SYNCHRONISATION..."; 
+    statusLabel.style.opacity = "1";
 
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                const file = await res.json();
-                
-                await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: "Update taches",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-                statusLabel.innerText = "✅ ENREGISTRÉ";
-                setTimeout(() => statusLabel.style.opacity = "0", 2000);
-            } catch (e) { statusLabel.innerText = "❌ ERREUR"; }
+    try {
+        // 1. Récupération du SHA actuel pour autoriser la modification
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!res.ok) throw new Error("Impossible de récupérer le fichier");
+        const file = await res.json();
+        
+        // 2. Envoi des données (allTasks contient déjà vos modifs locales)
+        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `token ${token}`, 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                message: "Update taches",
+                // Encodage propre pour gérer les accents et le camouflage
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
+                sha: file.sha
+            })
+        });
+
+        if (update.ok) {
+            statusLabel.innerText = "✅ ENREGISTRÉ";
+            // IMPORTANT : On ne relance PAS loadData() ici pour éviter que 
+            // le délai de GitHub (cache) ne fasse revenir d'anciennes données.
+            setTimeout(() => {
+                statusLabel.style.opacity = "0";
+            }, 2000);
+        } else {
+            throw new Error("Échec de la mise à jour");
         }
+    } catch (e) { 
+        console.error(e);
+        statusLabel.innerText = "❌ ERREUR SYNC"; 
+    }
+}
 
         window.onload = init;
     </script>
