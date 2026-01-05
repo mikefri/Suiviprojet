@@ -1,14 +1,5 @@
 [
   {
-    "id": "T-102",
-    "name": "Développement UI",
-    "start": "2026-01-08",
-    "end": "2026-01-25",
-    "progress": 30,
-    "owner": "Sarah L.",
-    "status": "En cours"
-  },
-  {
     "id": "T-1767608220659",
     "name": "testmika",
     "owner": "mika",
