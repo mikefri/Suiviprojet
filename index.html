@@ -85,6 +85,7 @@
                 </div>
                 <div class="flex flex-col gap-2 pt-4">
                     <button onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg">Enregistrer</button>
+                    <button onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg">Enregistrer</button>
                     <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm">Supprimer le projet</button>
                 </div>
                 <div id="config" class="hidden mt-4 pt-4 border-t border-slate-100">
@@ -200,6 +201,7 @@
         function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('modal-active'); }
 
         function editProject(id) {
+            const btnList = `<button onclick="window.location.href='liste_taches.html?id=${id}'" class="w-full bg-slate-800 text-white py-2 rounded-lg text-xs font-bold mb-2">📋 Voir la liste des tâches</button>`;
             const p = projects.find(i => i.id === id);
             if(!p) return;
             document.getElementById('p-id').value = p.id;
@@ -209,6 +211,21 @@
             document.getElementById('p-start').value = p.start;
             document.getElementById('p-end').value = p.end;
             document.getElementById('p-progress').value = p.progress || 0;
+
+// AJOUT DU BOUTON VERS LA LISTE DES TÂCHES
+            // On l'insère dans un conteneur dédié pour ne pas casser le reste
+            const listContainer = document.getElementById('task-link-container');
+            if (listContainer) {
+                listContainer.innerHTML = `
+                    <button onclick="window.location.href='liste_taches.html?id=${p.id}'" 
+                            class="w-full bg-slate-800 text-white py-3 rounded-lg text-sm font-bold mb-4 flex items-center justify-center gap-2 hover:bg-slate-700 transition shadow-sm">
+                        📋 Ouvrir la Liste des Tâches
+                    </button>
+                `;
+            }
+
+
+            
             document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('form-overlay').classList.add('modal-active');
         }
@@ -219,6 +236,10 @@
             document.getElementById('p-progress').value = 0;
             document.getElementById('p-status').value = 'En cours';
             document.getElementById('btn-delete').classList.add('hidden');
+            // On vide le lien vers les tâches pour les nouveaux projets
+            if(document.getElementById('task-link-container')) {
+                document.getElementById('task-link-container').innerHTML = '';
+            }
         }
 
         function deleteProject() {
