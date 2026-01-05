@@ -23,16 +23,21 @@
             <p id="project-info" class="text-slate-500 text-sm mt-1 italic"></p>
         </header>
 
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-            <div class="flex gap-2">
-                <input type="text" id="task-desc" placeholder="Nouvelle tâche..." 
-                       class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-                <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
-                <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
-                    +
-                </button>
-            </div>
-        </section>
+<section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+    <div class="flex flex-wrap gap-2">
+        <input type="text" id="task-desc" placeholder="Nouvelle tâche..." 
+               class="flex-1 min-w-[200px] p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+        
+        <input type="number" id="task-time" placeholder="Hrs" title="Temps estimé en heures"
+               class="w-20 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+
+        <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
+        
+        <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
+            +
+        </button>
+    </div>
+</section>
 
         <div id="task-list" class="space-y-3">
             </div>
@@ -93,34 +98,43 @@
                 <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm ${t.done ? 'done' : ''}">
                     <div class="flex items-center gap-4">
                         <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')" class="w-5 h-5 accent-indigo-600 cursor-pointer">
-                        <div>
-                            <p class="font-bold text-slate-700">${t.desc}</p>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Assigné à : ${dec(t.who)}</p>
-                        </div>
+                     <div>
+    <p class="font-bold text-slate-700">${t.desc}</p>
+    <div class="flex gap-3 items-center mt-1">
+        <p class="text-[10px] text-slate-400 font-bold uppercase">👤 ${dec(t.who)}</p>
+        <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
+            ⏱️ ${t.time} h
+        </span>
+    </div>
+</div>
                     </div>
                     <button onclick="deleteTask('${t.id}')" class="text-red-300 hover:text-red-600 px-2">&times;</button>
                 </div>
             `).join('');
         }
 
-        async function addTask() {
-            const desc = document.getElementById('task-desc').value.trim();
-            const who = document.getElementById('task-who').value;
-            if(!desc) return;
+async function addTask() {
+    const desc = document.getElementById('task-desc').value.trim();
+    const time = document.getElementById('task-time').value || 0; // Récupère le temps
+    const who = document.getElementById('task-who').value;
+    
+    if(!desc) return;
 
-            const newTask = {
-                id: "TASK-" + Date.now(),
-                projectId: currentProjectId,
-                desc: desc,
-                who: who, // On stocke la valeur encodée
-                done: false
-            };
+    const newTask = {
+        id: "TASK-" + Date.now(),
+        projectId: currentProjectId,
+        desc: desc,
+        time: time, // Nouveau champ enregistré dans taches.json
+        who: who,
+        done: false
+    };
 
-            allTasks.push(newTask);
-            document.getElementById('task-desc').value = '';
-            renderTasks();
-            await saveToGitHub();
-        }
+    allTasks.push(newTask);
+    document.getElementById('task-desc').value = '';
+    document.getElementById('task-time').value = ''; // Reset du champ temps
+    renderTasks();
+    await saveToGitHub();
+}
 
         async function toggleTask(id) {
             const t = allTasks.find(item => item.id === id);
