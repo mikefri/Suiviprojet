@@ -129,27 +129,51 @@
         }
 
         async function loadAllData() {
-            try {
-                // 1. Charger Responsables
-                const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
-                if (resR.ok) responsables = await resR.json();
-                
-                const select = document.getElementById('p-owner');
-                
-                // CORRECTION : Affichage décodé dans le menu mais valeur encodée conservée
-                if (responsables.length > 0) {
-                    select.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
-                } else {
-                    select.innerHTML = '<option value="Non assigné">Aucun responsable</option>';
-                }
+    // --- NOUVEAU : CHARGEMENT DU CACHE LOCAL (INSTANTANÉ) ---
+    const localP = localStorage.getItem('cache_projects');
+    const localR = localStorage.getItem('cache_responsables');
+    
+    if (localP) projects = JSON.parse(localP);
+    if (localR) responsables = JSON.parse(localR);
+    
+    // On affiche déjà ce qu'on a, pour éviter l'écran vide
+    if (projects.length > 0) renderGantt();
+    if (responsables.length > 0) {
+        document.getElementById('p-owner').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+    }
 
-                // 2. Charger Projets
-                const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-                if (resP.ok) projects = await resP.json();
-                
-                renderGantt();
-            } catch (e) { console.error("Erreur chargement données", e); }
+    try {
+        // 1. Charger Responsables depuis GitHub (avec anti-cache ?t=)
+        const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
+        if (resR.ok) {
+            responsables = await resR.json();
+            // On met à jour le cache local
+            localStorage.setItem('cache_responsables', JSON.stringify(responsables));
         }
+        
+        const select = document.getElementById('p-owner');
+        if (responsables.length > 0) {
+            select.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+        } else {
+            select.innerHTML = '<option value="Non assigné">Aucun responsable</option>';
+        }
+
+        // 2. Charger Projets depuis GitHub (avec anti-cache ?t=)
+        const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+        if (resP.ok) {
+            projects = await resP.json();
+            // On met à jour le cache local
+            localStorage.setItem('cache_projects', JSON.stringify(projects));
+        }
+        
+        // On rafraîchit le graphique avec les données toutes fraîches de GitHub
+        renderGantt();
+
+    } catch (e) { 
+        console.error("Erreur chargement données", e); 
+        // Si ça échoue, ce n'est pas grave, l'utilisateur voit au moins les données du cache local
+    }
+}
 
         function renderGantt(view = currentView) {
             currentView = view;
