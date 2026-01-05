@@ -398,30 +398,35 @@ async function checkWorkflows() {
     const text = document.getElementById('workflow-text');
 
     try {
-        // On récupère les 5 derniers runs de workflow
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/actions/runs?per_page=5`, {
-            headers: { 'Authorization': `token ${token}` }
+        // On ajoute un timestamp à l'URL de l'API pour éviter le cache du navigateur
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/actions/runs?per_page=1&t=${Date.now()}`, {
+            headers: { 
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
         
         if (!res.ok) return;
         const data = await res.json();
         const runs = data.workflow_runs;
 
-        // Vérifier s'il y en a un en cours
-        const isRunning = runs.some(run => run.status === "in_progress" || run.status === "queued");
-        
-        // Vérifier si le tout dernier a échoué
-        const lastFailed = runs[0] && runs[0].conclusion === "failure";
+        if (runs && runs.length > 0) {
+            const lastRun = runs[0];
+            const status = lastRun.status; // in_progress, queued, completed
+            const conclusion = lastRun.conclusion; // success, failure, etc.
 
-        if (isRunning) {
-            dot.className = "w-2 h-2 rounded-full bg-blue-500 animate-pulse";
-            text.innerText = "ACTIONS : EN COURS...";
-        } else if (lastFailed) {
-            dot.className = "w-2 h-2 rounded-full bg-red-500";
-            text.innerText = "ACTIONS : ÉCHEC";
-        } else {
-            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-            text.innerText = "ACTIONS : TERMINÉ";
+            if (status === "in_progress" || status === "queued") {
+                dot.className = "w-2 h-2 rounded-full bg-blue-500 animate-ping"; // Effet radar bleu
+                text.innerText = "ACTIONS : TRAVAIL EN COURS...";
+            } else if (status === "completed") {
+                if (conclusion === "success") {
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                    text.innerText = "ACTIONS : TERMINÉ";
+                } else {
+                    dot.className = "w-2 h-2 rounded-full bg-red-500";
+                    text.innerText = "ACTIONS : ÉCHEC";
+                }
+            }
         }
     } catch (e) {
         console.error("Erreur check workflows", e);
