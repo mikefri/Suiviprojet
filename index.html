@@ -88,11 +88,9 @@
                         <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">
                             Ajouter au Planning
                         </button>
-                        
                         <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition">
                             Supprimer le projet
                         </button>
-                        
                         <button id="btn-cancel" onclick="resetForm()" class="hidden w-full text-slate-500 py-2 text-sm font-semibold hover:text-slate-800 underline transition">
                             Annuler les modifications
                         </button>
@@ -116,7 +114,6 @@
                     <button onclick="changeView('Month')" class="hover:text-indigo-600 transition">Mois</button>
                 </div>
             </div>
-            
             <div id="gantt-container" class="resizable-gantt shadow-sm">
                 <div id="gantt-chart"></div>
             </div>
@@ -128,17 +125,25 @@
     <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
             <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold">Aide rapide</h3>
+                <h3 class="font-bold uppercase tracking-tight text-sm">Comprendre le planning</h3>
                 <button onclick="toggleHelp()" class="text-2xl leading-none">&times;</button>
             </div>
-            <div class="p-6 space-y-3 text-sm text-slate-600">
-                <p>• <b>Modifier</b> : Cliquez sur une barre du planning pour charger les données dans le formulaire.</p>
-                <p>• <b>Supprimer</b> : Cliquez sur une barre, puis utilisez le bouton rouge "Supprimer" qui apparaît à gauche.</p>
-                <p>• <b>Dates</b> : Vous pouvez glisser les barres horizontalement pour changer les dates.</p>
-                <p>• <b>Redimensionner</b> : Le coin inférieur droit du cadre gris permet d'ajuster la vue.</p>
+            <div class="p-6 space-y-5 text-sm text-slate-600">
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-1 italic underline">Couleurs & Progression</h4>
+                    <p>• <b>La zone colorée :</b> Indique l'avancement (50% pour les tâches en cours, 100% pour les terminées).</p>
+                    <p>• <b>La couleur spécifique :</b> Elle change selon le <b>Responsable</b> pour les identifier d'un coup d'œil.</p>
+                    <p>• <b>La zone grise :</b> Représente le temps restant prévu jusqu'à la date de fin.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-1 italic underline">Interactions</h4>
+                    <p>• <b>Déplacer (Drag & Drop) :</b> Glissez une barre pour changer ses dates de début/fin. La sauvegarde est automatique.</p>
+                    <p>• <b>Modifier :</b> Cliquez sur une barre pour charger ses informations dans le formulaire à gauche.</p>
+                    <p>• <b>Redimensionner :</b> Utilisez le coin bleu du cadre pour agrandir la zone de travail (Horizontal & Vertical).</p>
+                </div>
             </div>
             <div class="p-4 border-t text-right bg-slate-50">
-                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs uppercase">Fermer</button>
+                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs uppercase tracking-widest">Fermer</button>
             </div>
         </div>
     </div>
