@@ -6,6 +6,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("Service Worker Enregistré"));
+  }
+</script>
+
+
+
+    
     <style>
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .resizable-gantt { resize: vertical; overflow: auto; min-height: 500px; max-height: 85vh; width: 100%; border: 2px solid #e2e8f0; background: white; border-radius: 0.75rem; position: relative; }
