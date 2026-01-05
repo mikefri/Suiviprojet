@@ -1,0 +1,20 @@
+[
+  {
+    "id": "T-101",
+    "name": "Configuration Serveur",
+    "start": "2026-01-05",
+    "end": "2026-01-12",
+    "progress": 100,
+    "owner": "Jean Dupont",
+    "status": "Terminé"
+  },
+  {
+    "id": "T-102",
+    "name": "Développement UI",
+    "start": "2026-01-10",
+    "end": "2026-01-25",
+    "progress": 30,
+    "owner": "Sarah L.",
+    "status": "En cours"
+  }
+]
