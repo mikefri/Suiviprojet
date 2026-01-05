@@ -8,8 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
     <style>
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
-        
-        /* Conteneur principal du Gantt - Pleine largeur */
         .resizable-gantt {
             resize: vertical;
             overflow: auto;
@@ -21,14 +19,6 @@
             border-radius: 0.75rem;
             position: relative;
         }
-
-        .resizable-gantt::-webkit-resizer {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='21' y1='15' x2='15' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='10' x2='10' y2='21'%3E%3C/line%3E%3Cline x1='21' y1='5' x2='5' y2='21'%3E%3C/line%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: bottom right;
-            background-size: 14px;
-        }
-
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -40,9 +30,7 @@
             <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> 
             Pilotage Projet
         </h1>
-        
         <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition-all duration-300 opacity-0 italic"></div>
-        
         <div class="flex gap-3">
             <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config</button>
             <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition flex items-center gap-2">
@@ -62,7 +50,6 @@
                     <button onclick="changeView('Month')" class="px-3 py-1 hover:text-indigo-600 transition">Mois</button>
                 </div>
             </div>
-            
             <div id="gantt-container" class="resizable-gantt shadow-sm">
                 <div id="gantt-chart"></div>
             </div>
@@ -96,19 +83,24 @@
                         <input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
-                    <input type="number" id="p-progress" min="0" max="100" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
-                    <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
-                        <option value="À faire">À faire</option>
-                        <option value="En cours" selected>En cours</option>
-                        <option value="Terminé">Terminé</option>
-                        <option value="Bloqué">Bloqué</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
+                        <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
+                            <option value="À faire">À faire</option>
+                            <option value="En cours" selected>En cours</option>
+                            <option value="Terminé">Terminé</option>
+                            <option value="Bloqué">Bloqué</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Progression (%)</label>
+                        <input type="number" id="p-progress" min="0" max="100" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none" value="0">
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-2 pt-4">
-                    <button id="btn-add" onclick="addOrUpdateProject()" class="progress: parseInt(document.getElementById('p-progress').value) || 0, w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
+                    <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
                     <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">Supprimer le projet</button>
                 </div>
 
@@ -121,40 +113,11 @@
         </aside>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-200">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4 text-red-600 font-bold text-xl">!</div>
-            <h3 class="text-lg font-bold text-slate-900 mb-2">Supprimer le projet ?</h3>
-            <p class="text-sm text-slate-500 mb-6">Cette action est définitive.</p>
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Annuler</button>
-                <button onclick="confirmDeletion()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold shadow-md">Supprimer</button>
-            </div>
-        </div>
-    </div>
-
-    <button onclick="toggleHelp()" class="fixed bottom-6 right-6 w-12 h-12 bg-white border border-slate-200 text-slate-600 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-slate-50 z-30 transition">?</button>
-
-    <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center font-bold uppercase text-sm">
-                <span>Aide</span>
-                <button onclick="toggleHelp()" class="text-2xl">&times;</button>
-            </div>
-            <div class="p-6 space-y-4 text-sm text-slate-600">
-                <p>• <b>Double-cliquez</b> sur une barre pour modifier.</p>
-                <p>• <b>Glissez</b> les barres pour changer les dates.</p>
-                <p>• Les couleurs sont générées par <b>Responsable</b>.</p>
-            </div>
-        </div>
-    </div>
-
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
         let projects = [];
         let gantt;
         let currentView = 'Day';
-        let projectToDelete = null;
 
         function getColor(name) {
             let hash = 0;
@@ -162,15 +125,8 @@
             return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
         }
 
-        // --- GESTION FORMULAIRE ---
-        function openForm() {
-            resetForm();
-            document.getElementById('form-overlay').classList.add('modal-active');
-        }
-
-        function closeForm() {
-            document.getElementById('form-overlay').classList.remove('modal-active');
-        }
+        function openForm() { resetForm(); document.getElementById('form-overlay').classList.add('modal-active'); }
+        function closeForm() { document.getElementById('form-overlay').classList.remove('modal-active'); }
 
         function editProject(id) {
             const p = projects.find(i => i.id === id);
@@ -181,85 +137,73 @@
             document.getElementById('p-status').value = p.status;
             document.getElementById('p-start').value = p.start;
             document.getElementById('p-end').value = p.end;
+            document.getElementById('p-progress').value = p.progress || 0;
             document.getElementById('form-title').innerText = "Modifier Projet";
             document.getElementById('btn-add').innerText = "Mettre à jour";
             document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('form-overlay').classList.add('modal-active');
-            document.getElementById('p-progress').value = p.progress || 0;
         }
 
         function resetForm() {
             document.getElementById('p-id').value = '';
             document.getElementById('p-name').value = '';
             document.getElementById('p-owner').value = '';
-            document.getElementById('p-start').value = '';
-            document.getElementById('p-end').value = '';
+            document.getElementById('p-progress').value = 0;
             document.getElementById('form-title').innerText = "Nouveau Projet";
             document.getElementById('btn-add').innerText = "Ajouter au Planning";
             document.getElementById('btn-delete').classList.add('hidden');
         }
 
-        // --- GESTION DONNEES ---
         async function loadData() {
             try {
                 const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-                if (res.ok) {
-                    projects = await res.json();
-                    renderGantt();
-                }
+                if (res.ok) { projects = await res.json(); renderGantt(); }
             } catch (e) { console.warn("data.json non trouvé."); }
         }
 
-function renderGantt(view = currentView) {
-    currentView = view;
-    const chartEl = document.getElementById('gantt-chart');
-    if (projects.length === 0) {
-        chartEl.innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet enregistré.</p>';
-        return;
-    }
+        function renderGantt(view = currentView) {
+            currentView = view;
+            const chartEl = document.getElementById('gantt-chart');
+            if (projects.length === 0) {
+                chartEl.innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet enregistré.</p>';
+                return;
+            }
 
-    const tasks = projects.map(p => ({
-        id: p.id,
-        // Utilise p.progress s'il existe, sinon 0
-        name: `${p.name} (${p.owner}) - ${p.progress || 0}%`,
-        start: p.start,
-        end: p.end,
-        progress: p.progress || 0,
-        custom_class: 'bar-' + p.id
-    }));
+            const tasks = projects.map(p => ({
+                id: p.id,
+                name: `${p.name} (${p.owner}) - ${p.progress || 0}%`,
+                start: p.start,
+                end: p.end,
+                progress: p.progress || 0,
+                custom_class: 'bar-' + p.id
+            }));
 
-    chartEl.innerHTML = '';
-    gantt = new Gantt("#gantt-chart", tasks, {
-        language: 'fr',
-        view_mode: view,
-        bar_height: 40,
-        padding: 18,
-        on_click: task => editProject(task.id),
-        
-        // QUAND ON BOUGE LA BARRE (DATES)
-        on_date_change: (task, start, end) => {
-            let p = projects.find(i => i.id === task.id);
-            p.start = start.toISOString().split('T')[0];
-            p.end = end.toISOString().split('T')[0];
-            renderGantt(); // Relancer le rendu pour mettre à jour le texte
-            saveToGitHub(true); // Sauvegarde auto
-        },
+            chartEl.innerHTML = '';
+            gantt = new Gantt("#gantt-chart", tasks, {
+                language: 'fr',
+                view_mode: view,
+                bar_height: 40,
+                on_click: task => editProject(task.id),
+                on_date_change: (task, start, end) => {
+                    let p = projects.find(i => i.id === task.id);
+                    p.start = start.toISOString().split('T')[0];
+                    p.end = end.toISOString().split('T')[0];
+                    renderGantt(); 
+                    saveToGitHub(true);
+                },
+                on_progress_change: (task, progress) => {
+                    let p = projects.find(i => i.id === task.id);
+                    p.progress = progress;
+                    renderGantt(); 
+                    saveToGitHub(true);
+                }
+            });
 
-        // QUAND ON BOUGE LE CURSEUR DE PROGRESSION (POURCENTAGE)
-        on_progress_change: (task, progress) => {
-            let p = projects.find(i => i.id === task.id);
-            p.progress = progress;
-            renderGantt(); // Met à jour le texte "- 50%" instantanément
-            saveToGitHub(true); // Sauvegarde auto
+            projects.forEach(p => {
+                const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
+                if(bar) bar.style.fill = getColor(p.owner);
+            });
         }
-    });
-
-    // Colorisation des barres
-    projects.forEach(p => {
-        const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
-        if(bar) bar.style.fill = getColor(p.owner);
-    });
-}
 
         function addOrUpdateProject() {
             const id = document.getElementById('p-id').value;
@@ -268,43 +212,26 @@ function renderGantt(view = currentView) {
                 owner: document.getElementById('p-owner').value || 'Sans nom',
                 status: document.getElementById('p-status').value,
                 start: document.getElementById('p-start').value,
-                end: document.getElementById('p-end').value
+                end: document.getElementById('p-end').value,
+                progress: parseInt(document.getElementById('p-progress').value) || 0
             };
             if(!pData.name || !pData.start || !pData.end) return alert("Nom et dates requis.");
+            
             if(id) {
                 const index = projects.findIndex(i => i.id === id);
                 projects[index] = { ...projects[index], ...pData };
             } else {
                 projects.push({ id: "ID-" + Date.now(), ...pData });
             }
-            renderGantt();
-            closeForm();
-            saveToGitHub(true);
+            renderGantt(); closeForm(); saveToGitHub(true);
         }
 
-        // --- SUPPRESSION ---
-        function deleteProject() {
-            projectToDelete = document.getElementById('p-id').value;
-            if (projectToDelete) document.getElementById('delete-modal').classList.add('modal-active');
-        }
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').classList.remove('modal-active');
-        }
-        function confirmDeletion() {
-            projects = projects.filter(p => p.id !== projectToDelete);
-            renderGantt();
-            closeForm();
-            closeDeleteModal();
-            saveToGitHub(true);
-        }
-
-        // --- SAUVEGARDE GITHUB ---
         async function saveToGitHub(isAuto = false) {
             const token = localStorage.getItem('gh_token');
-            if(!token) return isAuto ? null : alert("Token manquant.");
+            if(!token) return;
             const statusLabel = document.getElementById('save-status');
             statusLabel.innerText = "⏳ SAUVEGARDE...";
-            statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 opacity-100 transition-all";
+            statusLabel.style.opacity = "1";
             try {
                 const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
                     headers: { 'Authorization': `token ${token}` }
@@ -321,23 +248,18 @@ function renderGantt(view = currentView) {
                 });
                 if(update.ok) {
                     statusLabel.innerText = "✅ ENREGISTRÉ";
-                    statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 opacity-100 transition-all";
-                    setTimeout(() => statusLabel.style.opacity = "0", 3000);
+                    setTimeout(() => statusLabel.style.opacity = "0", 2000);
                 }
             } catch (e) { statusLabel.innerText = "❌ ERREUR SYNC"; }
         }
 
         function changeView(v) { renderGantt(v); }
         function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
-        function toggleHelp() { document.getElementById('help-modal').classList.toggle('modal-active'); }
         function saveSettings() {
             localStorage.setItem('gh_token', document.getElementById('gh-token').value);
-            toggleConfig();
-            loadData();
+            toggleConfig(); loadData();
         }
 
-        const resizeObserver = new ResizeObserver(() => { if (gantt) renderGantt(); });
-        resizeObserver.observe(document.getElementById('gantt-container'));
         window.onload = loadData;
     </script>
 </body>
