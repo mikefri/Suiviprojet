@@ -10,18 +10,21 @@
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .details-container { display: none; }
         
+        /* Conteneur Redimensionnable */
         .resizable-gantt {
-            resize: both;
-            overflow: auto;
-            min-height: 450px;
+            resize: both; /* Permet le redimensionnement H et V */
+            overflow: auto; /* Obligatoire pour resize */
+            min-height: 400px;
             min-width: 300px;
             max-height: 85vh;
             max-width: 100%;
             border: 2px solid #e2e8f0;
             background: white;
             border-radius: 0.75rem;
+            position: relative;
         }
 
+        /* Personnalisation de la poignée de redimensionnement (Chrome/Safari) */
         .resizable-gantt::-webkit-resizer {
             background-color: #4f46e5;
             border: 3px solid white;
@@ -131,15 +134,13 @@
             <div class="p-6 space-y-5 text-sm text-slate-600">
                 <div>
                     <h4 class="font-bold text-slate-900 mb-1 italic underline">Couleurs & Progression</h4>
-                    <p>• <b>La zone colorée :</b> Indique l'avancement (50% pour les tâches en cours, 100% pour les terminées).</p>
-                    <p>• <b>La couleur spécifique :</b> Elle change selon le <b>Responsable</b> pour les identifier d'un coup d'œil.</p>
-                    <p>• <b>La zone grise :</b> Représente le temps restant prévu jusqu'à la date de fin.</p>
+                    <p>• <b>La zone colorée :</b> Avancement du projet.</p>
+                    <p>• <b>Couleur par responsable :</b> Chaque personne a sa propre couleur.</p>
                 </div>
                 <div>
                     <h4 class="font-bold text-slate-900 mb-1 italic underline">Interactions</h4>
-                    <p>• <b>Déplacer (Drag & Drop) :</b> Glissez une barre pour changer ses dates de début/fin. La sauvegarde est automatique.</p>
-                    <p>• <b>Modifier :</b> Cliquez sur une barre pour charger ses informations dans le formulaire à gauche.</p>
-                    <p>• <b>Redimensionner :</b> Utilisez le coin bleu du cadre pour agrandir la zone de travail (Horizontal & Vertical).</p>
+                    <p>• <b>Glisser :</b> Déplacez les barres pour changer les dates.</p>
+                    <p>• <b>Redimensionner :</b> Utilisez le coin bleu en bas à droite du cadre blanc.</p>
                 </div>
             </div>
             <div class="p-4 border-t text-right bg-slate-50">
@@ -152,6 +153,7 @@
         const REPO_NAME = "mikefri/Pilotage_Projet";
         let projects = [];
         let gantt;
+        let currentView = 'Day';
 
         function getColor(name) {
             let hash = 0;
@@ -170,7 +172,8 @@
             } catch (e) { console.warn("Fichier data.json non trouvé."); }
         }
 
-        function renderGantt(view = 'Day') {
+        function renderGantt(view = currentView) {
+            currentView = view;
             if (projects.length === 0) {
                 document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet.</p>';
                 return;
@@ -183,36 +186,43 @@
                 progress: p.status === 'Terminé' ? 100 : 50,
                 custom_class: 'bar-' + p.id
             }));
+
             document.getElementById('gantt-chart').innerHTML = '';
-gantt = new Gantt("#gantt-chart", tasks, {
-    language: 'fr',
-    view_mode: view,
-    bar_height: 35,
-    padding: 18,
-    on_click: task => editProject(task.id),
-    // SAUVEGARDE QUAND ON DÉPLACE LA BARRE (DATES)
-    on_date_change: (task, start, end) => {
-        let p = projects.find(i => i.id === task.id);
-        p.start = start.toISOString().split('T')[0];
-        p.end = end.toISOString().split('T')[0];
-        saveToGitHub(true); 
-    },
-    // AJOUT : SAUVEGARDE QUAND ON MODIFIE LA PROGRESSION (COULEUR)
-    on_progress_change: (task, progress) => {
-        let p = projects.find(i => i.id === task.id);
-        // Si on change la progression à la main, on peut aussi 
-        // décider que cela change le statut si c'est à 100%
-        if (progress === 100) p.status = "Terminé";
-        else if (progress > 0 && p.status === "À faire") p.status = "En cours";
-        
-        saveToGitHub(true); // Déclenche la sauvegarde sur GitHub
-    }
-});
+            gantt = new Gantt("#gantt-chart", tasks, {
+                language: 'fr',
+                view_mode: view,
+                bar_height: 35,
+                padding: 18,
+                on_click: task => editProject(task.id),
+                on_date_change: (task, start, end) => {
+                    let p = projects.find(i => i.id === task.id);
+                    p.start = start.toISOString().split('T')[0];
+                    p.end = end.toISOString().split('T')[0];
+                    saveToGitHub(true); 
+                },
+                on_progress_change: (task, progress) => {
+                    let p = projects.find(i => i.id === task.id);
+                    if (progress === 100) p.status = "Terminé";
+                    else if (progress > 0 && p.status === "À faire") p.status = "En cours";
+                    saveToGitHub(true);
+                }
+            });
+
             projects.forEach(p => {
                 const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
                 if(bar) bar.style.fill = getColor(p.owner);
             });
         }
+
+        // --- NOUVEAU : Observer pour le redimensionnement automatique ---
+        const resizeObserver = new ResizeObserver(() => {
+            if (gantt && projects.length > 0) {
+                // On rafraîchit le graphique sans perte de données
+                renderGantt(currentView);
+            }
+        });
+        resizeObserver.observe(document.getElementById('gantt-container'));
+        // ----------------------------------------------------------------
 
         function editProject(id) {
             const p = projects.find(i => i.id === id);
