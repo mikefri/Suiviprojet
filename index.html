@@ -20,6 +20,15 @@
             <h1 class="text-xl font-bold flex items-center gap-2">
                 <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
             </h1>
+
+            
+            <div id="workflow-status" class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500">
+    <span id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
+    <span id="workflow-text">ACTIONS : IDLE</span>
+</div>
+
+
+            
             <div class="h-6 w-[1px] bg-slate-200"></div>
             <a href="responsables.html" class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-2">
                 👥 Gestion Équipe
@@ -379,6 +388,52 @@
                 alert("Veuillez saisir un token.");
             }
         }
+
+
+async function checkWorkflows() {
+    const token = localStorage.getItem('gh_token');
+    if (!token) return;
+
+    const dot = document.getElementById('workflow-dot');
+    const text = document.getElementById('workflow-text');
+
+    try {
+        // On récupère les 5 derniers runs de workflow
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/actions/runs?per_page=5`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!res.ok) return;
+        const data = await res.json();
+        const runs = data.workflow_runs;
+
+        // Vérifier s'il y en a un en cours
+        const isRunning = runs.some(run => run.status === "in_progress" || run.status === "queued");
+        
+        // Vérifier si le tout dernier a échoué
+        const lastFailed = runs[0] && runs[0].conclusion === "failure";
+
+        if (isRunning) {
+            dot.className = "w-2 h-2 rounded-full bg-blue-500 animate-pulse";
+            text.innerText = "ACTIONS : EN COURS...";
+        } else if (lastFailed) {
+            dot.className = "w-2 h-2 rounded-full bg-red-500";
+            text.innerText = "ACTIONS : ÉCHEC";
+        } else {
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            text.innerText = "ACTIONS : TERMINÉ";
+        }
+    } catch (e) {
+        console.error("Erreur check workflows", e);
+    }
+}
+
+// Lancer la vérification toutes les 15 secondes
+setInterval(checkWorkflows, 15000);
+// Et au chargement
+checkWorkflows();
+
+        
 
         window.onload = loadAllData;
     </script>
