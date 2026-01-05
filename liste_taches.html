@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Détails des Tâches</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .done { text-decoration: line-through; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans p-6">
+
+    <nav class="max-w-3xl mx-auto mb-8 flex justify-between items-center">
+        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">
+            ← Retour au Planning
+        </a>
+        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all italic"></div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto">
+        <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-6">
+            <h1 id="project-title" class="text-2xl font-bold text-slate-800">Chargement du projet...</h1>
+            <p id="project-info" class="text-slate-500 text-sm mt-1 italic"></p>
+        </header>
+
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+            <div class="flex gap-2">
+                <input type="text" id="task-desc" placeholder="Nouvelle tâche..." 
+                       class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
+                <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
+                    +
+                </button>
+            </div>
+        </section>
+
+        <div id="task-list" class="space-y-3">
+            </div>
+    </main>
+
+    <script>
+        const REPO_NAME = "mikefri/Pilotage_Projet";
+        let allTasks = []; // Toutes les tâches de tous les projets
+        let responsables = [];
+        let currentProjectId = new URLSearchParams(window.location.search).get('id');
+
+        // Fonctions de camouflage
+        const dec = (str) => { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } };
+        const enc = (str) => btoa(unescape(encodeURIComponent(str)));
+
+        async function init() {
+            if (!currentProjectId) {
+                document.getElementById('project-title').innerText = "Aucun projet sélectionné";
+                return;
+            }
+            await loadData();
+        }
+
+        async function loadData() {
+            try {
+                // 1. Charger les responsables
+                const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
+                if (resR.ok) responsables = await resR.json();
+                document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+
+                // 2. Charger les tâches existantes
+                const resT = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/taches.json?t=${Date.now()}`);
+                if (resT.ok) allTasks = await resT.json();
+
+                // 3. Charger le nom du projet depuis data.json pour le titre
+                const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+                if (resP.ok) {
+                    const projects = await resP.json();
+                    const p = projects.find(i => i.id === currentProjectId);
+                    if(p) document.getElementById('project-title').innerText = "Tâches : " + p.name;
+                }
+
+                renderTasks();
+            } catch (e) { console.error(e); }
+        }
+
+        function renderTasks() {
+            const listEl = document.getElementById('task-list');
+            // On ne filtre que les tâches liées à ce projet
+            const projectTasks = allTasks.filter(t => t.projectId === currentProjectId);
+
+            if(projectTasks.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-slate-400 py-10 italic">Aucune tâche pour le moment.</p>';
+                return;
+            }
+
+            listEl.innerHTML = projectTasks.map(t => `
+                <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm ${t.done ? 'done' : ''}">
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')" class="w-5 h-5 accent-indigo-600 cursor-pointer">
+                        <div>
+                            <p class="font-bold text-slate-700">${t.desc}</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Assigné à : ${dec(t.who)}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteTask('${t.id}')" class="text-red-300 hover:text-red-600 px-2">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        async function addTask() {
+            const desc = document.getElementById('task-desc').value.trim();
+            const who = document.getElementById('task-who').value;
+            if(!desc) return;
+
+            const newTask = {
+                id: "TASK-" + Date.now(),
+                projectId: currentProjectId,
+                desc: desc,
+                who: who, // On stocke la valeur encodée
+                done: false
+            };
+
+            allTasks.push(newTask);
+            document.getElementById('task-desc').value = '';
+            renderTasks();
+            await saveToGitHub();
+        }
+
+        async function toggleTask(id) {
+            const t = allTasks.find(item => item.id === id);
+            if(t) t.done = !t.done;
+            renderTasks();
+            await saveToGitHub();
+        }
+
+        async function deleteTask(id) {
+            allTasks = allTasks.filter(t => t.id !== id);
+            renderTasks();
+            await saveToGitHub();
+        }
+
+        async function saveToGitHub() {
+            const token = localStorage.getItem('gh_token');
+            if(!token) return alert("Configurez votre token sur la page planning.");
+            
+            const statusLabel = document.getElementById('save-status');
+            statusLabel.innerText = "⏳ SYNCHRONISATION..."; statusLabel.style.opacity = "1";
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                const file = await res.json();
+                
+                await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Update taches",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
+                        sha: file.sha
+                    })
+                });
+                statusLabel.innerText = "✅ ENREGISTRÉ";
+                setTimeout(() => statusLabel.style.opacity = "0", 2000);
+            } catch (e) { statusLabel.innerText = "❌ ERREUR"; }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
