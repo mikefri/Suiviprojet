@@ -107,6 +107,13 @@
 
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
+        // COLLE LES DEUX FONCTIONS ICI :
+    function enc(str) { return btoa(unescape(encodeURIComponent(str))); }
+    function dec(str) { 
+        try { return decodeURIComponent(escape(atob(str))); } 
+        catch(e) { return str; } 
+    }
+
         let projects = [];
         let responsables = [];
         let gantt;
