@@ -2,21 +2,21 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion des Responsables</title>
+    <title>Gestion des Responsables - Sécurisé</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans p-6">
 
     <nav class="max-w-2xl mx-auto mb-8 flex justify-between items-center">
-        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2">
+        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">
             ← Retour au Planning
         </a>
-        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all"></div>
+        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
     </nav>
 
     <main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-        <h1 class="text-2xl font-bold mb-2">Responsables</h1>
-        <p class="text-slate-500 text-sm mb-8">Ajoutez ou supprimez les membres de l'équipe pour les retrouver dans le planning.</p>
+        <h1 class="text-2xl font-bold mb-2">Gestion d'Équipe</h1>
+        <p class="text-slate-500 text-sm mb-8">Les noms ajoutés ici seront encodés (cachés) dans le fichier JSON sur GitHub.</p>
 
         <div class="flex gap-2 mb-10">
             <input type="text" id="new-respo-name" placeholder="Nom du responsable..." 
@@ -33,8 +33,22 @@
 
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
-        let responsables = [];
+        let responsables = []; // Contiendra les noms encodés (Base64)
 
+        // --- ENCODAGE / DÉCODAGE (Gestion des accents) ---
+        function encodeName(name) {
+            return btoa(unescape(encodeURIComponent(name)));
+        }
+
+        function decodeName(encoded) {
+            try {
+                return decodeURIComponent(escape(atob(encoded)));
+            } catch (e) {
+                return encoded; // Retourne brut si pas encodé (pour la transition)
+            }
+        }
+
+        // --- CHARGEMENT ---
         async function loadRespos() {
             try {
                 const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
@@ -45,58 +59,94 @@
             } catch (e) { console.error("Erreur de chargement"); }
         }
 
+        // --- AFFICHAGE (On décode pour l'humain) ---
         function renderList() {
             const list = document.getElementById('respo-list');
-            list.innerHTML = responsables.map(r => `
-                <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
-                    <span class="font-bold text-slate-700">${r}</span>
-                    <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
-                </div>
-            `).join('');
+            if (responsables.length === 0) {
+                list.innerHTML = '<p class="text-center text-slate-400 italic py-4">Aucun responsable enregistré.</p>';
+                return;
+            }
+
+            list.innerHTML = responsables.map(r => {
+                const dName = decodeName(r);
+                return `
+                    <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
+                            <span class="font-bold text-slate-700">${dName}</span>
+                        </div>
+                        <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
+                    </div>
+                `;
+            }).join('');
         }
 
+        // --- ACTIONS ---
         async function addResponsable() {
-            const name = document.getElementById('new-respo-name').value.trim();
-            if(!name || responsables.includes(name)) return;
-            responsables.push(name);
-            document.getElementById('new-respo-name').value = '';
+            const input = document.getElementById('new-respo-name');
+            const name = input.value.trim();
+            
+            if(!name) return;
+            
+            const encoded = encodeName(name);
+            if(responsables.includes(encoded)) {
+                alert("Ce responsable existe déjà.");
+                return;
+            }
+
+            responsables.push(encoded);
+            input.value = '';
             renderList();
             await saveToGitHub();
         }
 
-        async function removeRespo(name) {
-            if(!confirm(`Supprimer ${name} ?`)) return;
-            responsables = responsables.filter(r => r !== name);
+        async function removeRespo(encodedName) {
+            if(!confirm(`Supprimer ce responsable ?`)) return;
+            responsables = responsables.filter(r => r !== encodedName);
             renderList();
             await saveToGitHub();
         }
 
+        // --- SAUVEGARDE SUR GITHUB ---
         async function saveToGitHub() {
             const token = localStorage.getItem('gh_token');
-            if(!token) return alert("Token manquant (cliquez sur Config sur la page planning)");
+            if(!token) {
+                alert("Token GitHub manquant. Configurez-le sur la page Planning.");
+                return;
+            }
             
             const statusLabel = document.getElementById('save-status');
             statusLabel.innerText = "⏳ SYNCHRONISATION...";
             statusLabel.style.opacity = "1";
 
             try {
+                // Récupérer le SHA du fichier actuel
                 const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
                     headers: { 'Authorization': `token ${token}` }
                 });
                 const file = await res.json();
                 
-                await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+                // Envoyer la mise à jour
+                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: "Mise à jour responsables",
+                        message: "Mise à jour responsables (encodés)",
                         content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
                         sha: file.sha
                     })
                 });
-                statusLabel.innerText = "✅ ENREGISTRÉ";
-                setTimeout(() => statusLabel.style.opacity = "0", 2000);
-            } catch (e) { statusLabel.innerText = "❌ ERREUR"; }
+
+                if(update.ok) {
+                    statusLabel.innerText = "✅ ENREGISTRÉ";
+                    setTimeout(() => statusLabel.style.opacity = "0", 2000);
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                statusLabel.innerText = "❌ ERREUR";
+                console.error(e);
+            }
         }
 
         window.onload = loadRespos;
