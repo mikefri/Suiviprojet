@@ -54,9 +54,8 @@
             <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> 
             Pilotage Projet
         </h1>
-        <div id="save-status" class="text-sm font-medium text-slate-500 italic">
-            Dépôt : mikefri/Pilotage_Projet
-        </div>
+<            div id="save-status" class="text-sm font-medium text-slate-500 italic">
+                </div>
         <div class="flex gap-3">
             <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config Token</button>
             <button onclick="saveToGitHub()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold shadow-md transition">Forcer Sauvegarde</button>
@@ -173,16 +172,18 @@
             return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
         }
 
-        async function loadData() {
-            try {
-                const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-                if (res.ok) {
-                    projects = await res.json();
-                    renderGantt();
-                    document.getElementById('save-status').innerText = "✅ Connecté : " + REPO_NAME;
-                }
-            } catch (e) { console.warn("Fichier data.json non trouvé."); }
+async function loadData() {
+    try {
+        const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+        if (res.ok) {
+            projects = await res.json();
+            renderGantt();
+            // On ne met rien dans save-status ici pour rester discret
         }
+    } catch (e) { 
+        console.warn("Fichier data.json non trouvé."); 
+    }
+}
 
         function renderGantt(view = currentView) {
             currentView = view;
