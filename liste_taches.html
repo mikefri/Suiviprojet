@@ -77,7 +77,7 @@
                 if (resP.ok) {
                     const projects = await resP.json();
                     const p = projects.find(i => i.id === currentProjectId);
-                    if(p) document.getElementById('project-title').innerText = "Détails des Tâches du projet : " + p.name;
+                    if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
                 }
 
                 renderTasks();
