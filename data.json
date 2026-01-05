@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "ID-1767644781229",
+    "name": "Supermarché",
+    "owner": "Frischherz M",
+    "status": "En cours",
+    "start": "2026-01-05",
+    "end": "2026-01-05",
+    "progress": 1
+  }
+]
