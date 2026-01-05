@@ -62,27 +62,56 @@
         }
 
         async function loadData() {
-            try {
-                // 1. Charger les responsables
-                const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
-                if (resR.ok) responsables = await resR.json();
-                document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+    // --- NOUVEAU : CHARGEMENT DU CACHE LOCAL (INSTANTANÉ) ---
+    const localTasks = localStorage.getItem('cache_taches');
+    const localResp = localStorage.getItem('cache_responsables');
+    const localProj = localStorage.getItem('cache_projects');
 
-                // 2. Charger les tâches existantes
-                const resT = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/taches.json?t=${Date.now()}`);
-                if (resT.ok) allTasks = await resT.json();
+    if (localTasks) allTasks = JSON.parse(localTasks);
+    if (localResp) responsables = JSON.parse(localResp);
+    
+    // Affichage immédiat des données du cache
+    if (responsables.length > 0) {
+        document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+    }
+    if (localProj && currentProjectId) {
+        const p = JSON.parse(localProj).find(i => i.id === currentProjectId);
+        if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
+    }
+    renderTasks();
 
-                // 3. Charger le nom du projet depuis data.json pour le titre
-                const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-                if (resP.ok) {
-                    const projects = await resP.json();
-                    const p = projects.find(i => i.id === currentProjectId);
-                    if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
-                }
-
-                renderTasks();
-            } catch (e) { console.error(e); }
+    try {
+        // --- 1. Synchronisation des responsables ---
+        const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
+        if (resR.ok) {
+            responsables = await resR.json();
+            localStorage.setItem('cache_responsables', JSON.stringify(responsables));
+            document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
         }
+
+        // --- 2. Synchronisation des tâches existantes ---
+        const resT = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/taches.json?t=${Date.now()}`);
+        if (resT.ok) {
+            allTasks = await resT.json();
+            localStorage.setItem('cache_taches', JSON.stringify(allTasks));
+        }
+
+        // --- 3. Synchronisation du titre (data.json) ---
+        const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+        if (resP.ok) {
+            const projects = await resP.json();
+            localStorage.setItem('cache_projects', JSON.stringify(projects));
+            const p = projects.find(i => i.id === currentProjectId);
+            if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
+        }
+
+        // Mise à jour finale après réception des données GitHub
+        renderTasks();
+
+    } catch (e) { 
+        console.error("Délai GitHub ou erreur réseau : utilisation des données locales.", e); 
+    }
+}
 
         function renderTasks() {
             const listEl = document.getElementById('task-list');
