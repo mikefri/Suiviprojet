@@ -361,8 +361,24 @@
 }
 
         function changeView(v) { renderGantt(v); }
-        function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
-        function saveSettings() { localStorage.setItem('gh_token', document.getElementById('gh-token').value); loadAllData(); }
+        function toggleConfig() { 
+            document.getElementById('config-overlay').classList.toggle('hidden'); 
+            document.getElementById('config-overlay').classList.toggle('modal-active');
+            
+            // Pré-remplir avec le token actuel s'il existe
+            const savedToken = localStorage.getItem('gh_token');
+            if(savedToken) document.getElementById('gh-token').value = savedToken;
+        }
+        function saveSettings() { 
+            const val = document.getElementById('gh-token').value;
+            if(val) {
+                localStorage.setItem('gh_token', val); 
+                toggleConfig(); // Ferme la modale
+                loadAllData();  // Recharge les données avec le nouveau token
+            } else {
+                alert("Veuillez saisir un token.");
+            }
+        }
 
         window.onload = loadAllData;
     </script>
