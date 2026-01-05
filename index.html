@@ -275,27 +275,55 @@
         }
 
         async function saveToGitHub(filename, data) {
-            const token = localStorage.getItem('gh_token');
-            if(!token) return;
-            const statusLabel = document.getElementById('save-status');
-            statusLabel.innerText = "⏳ SYNCHRONISATION..."; statusLabel.style.opacity = "1";
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                const file = await res.json();
-                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: `Update ${filename}`,
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-                if(update.ok) { statusLabel.innerText = "✅ ENREGISTRÉ"; setTimeout(() => statusLabel.style.opacity = "0", 2000); }
-            } catch (e) { statusLabel.innerText = "❌ ERREUR"; }
+    const token = localStorage.getItem('gh_token');
+    if (!token) return;
+
+    const statusLabel = document.getElementById('save-status');
+    statusLabel.innerText = "⏳ SYNCHRONISATION...";
+    statusLabel.style.opacity = "1";
+
+    try {
+        // 1. Récupération du SHA actuel pour autoriser la modification
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Fichier introuvable");
+        const file = await res.json();
+
+        // 2. Envoi de la mise à jour
+        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `token ${token}`, 
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                message: `Update ${filename}`,
+                // Utilisation de data qui contient déjà les dernières modifs du Gantt
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
+                sha: file.sha
+            })
+        });
+
+        if (update.ok) {
+            statusLabel.innerText = "✅ ENREGISTRÉ";
+            
+            // IMPORTANT : Surtout ne pas appeler loadAllData() ici.
+            // Le Gantt a déjà été mis à jour visuellement par l'interaction utilisateur.
+            
+            setTimeout(() => {
+                statusLabel.style.opacity = "0";
+            }, 2000);
+        } else {
+            throw new Error("Erreur lors de la mise à jour");
         }
+    } catch (e) {
+        console.error("Erreur de sauvegarde:", e);
+        statusLabel.innerText = "❌ ERREUR";
+        // En cas d'erreur, on peut laisser le message rouge pour alerter l'utilisateur
+    }
+}
 
         function changeView(v) { renderGantt(v); }
         function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
