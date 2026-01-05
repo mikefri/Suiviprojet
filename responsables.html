@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Responsables</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans p-6">
+
+    <nav class="max-w-2xl mx-auto mb-8 flex justify-between items-center">
+        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2">
+            ← Retour au Planning
+        </a>
+        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all"></div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <h1 class="text-2xl font-bold mb-2">Responsables</h1>
+        <p class="text-slate-500 text-sm mb-8">Ajoutez ou supprimez les membres de l'équipe pour les retrouver dans le planning.</p>
+
+        <div class="flex gap-2 mb-10">
+            <input type="text" id="new-respo-name" placeholder="Nom du responsable..." 
+                   class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+            <button onclick="addResponsable()" 
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
+                Ajouter
+            </button>
+        </div>
+
+        <div id="respo-list" class="space-y-3">
+            </div>
+    </main>
+
+    <script>
+        const REPO_NAME = "mikefri/Pilotage_Projet";
+        let responsables = [];
+
+        async function loadRespos() {
+            try {
+                const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
+                if (res.ok) {
+                    responsables = await res.json();
+                    renderList();
+                }
+            } catch (e) { console.error("Erreur de chargement"); }
+        }
+
+        function renderList() {
+            const list = document.getElementById('respo-list');
+            list.innerHTML = responsables.map(r => `
+                <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
+                    <span class="font-bold text-slate-700">${r}</span>
+                    <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
+                </div>
+            `).join('');
+        }
+
+        async function addResponsable() {
+            const name = document.getElementById('new-respo-name').value.trim();
+            if(!name || responsables.includes(name)) return;
+            responsables.push(name);
+            document.getElementById('new-respo-name').value = '';
+            renderList();
+            await saveToGitHub();
+        }
+
+        async function removeRespo(name) {
+            if(!confirm(`Supprimer ${name} ?`)) return;
+            responsables = responsables.filter(r => r !== name);
+            renderList();
+            await saveToGitHub();
+        }
+
+        async function saveToGitHub() {
+            const token = localStorage.getItem('gh_token');
+            if(!token) return alert("Token manquant (cliquez sur Config sur la page planning)");
+            
+            const statusLabel = document.getElementById('save-status');
+            statusLabel.innerText = "⏳ SYNCHRONISATION...";
+            statusLabel.style.opacity = "1";
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                const file = await res.json();
+                
+                await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Mise à jour responsables",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
+                        sha: file.sha
+                    })
+                });
+                statusLabel.innerText = "✅ ENREGISTRÉ";
+                setTimeout(() => statusLabel.style.opacity = "0", 2000);
+            } catch (e) { statusLabel.innerText = "❌ ERREUR"; }
+        }
+
+        window.onload = loadRespos;
+    </script>
+</body>
+</html>
