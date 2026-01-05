@@ -10,13 +10,25 @@
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .details-container { display: none; }
         
-        /* ZONE REDIMENSIONNABLE */
+        /* ZONE REDIMENSIONNABLE LIBRE */
         .resizable-gantt {
-            resize: vertical; /* Permet le redimensionnement vertical */
-            overflow: auto;   /* Nécessaire pour le resize */
+            resize: both;        /* Permet le redimensionnement vertical et horizontal */
+            overflow: auto;      /* Nécessaire pour le resize et le scroll */
             min-height: 400px;
-            max-height: 1200px;
-            border-bottom: 4px solid #f1f5f9; /* Petite bordure pour indiquer la zone */
+            min-width: 300px;
+            max-height: 90vh;
+            max-width: 100%;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 0.75rem;
+            position: relative;
+        }
+
+        /* Style de la poignée de redimensionnement pour la rendre plus visible */
+        .resizable-gantt::-webkit-resizer {
+            background-color: #4f46e5;
+            border: 3px solid white;
+            border-radius: 5px;
         }
 
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
@@ -39,18 +51,8 @@
         </div>
     </nav>
 
-    <main class="p-6 max-w-[1800px] mx-auto grid grid-cols-12 gap-6">
+    <main class="p-6 max-w-[1920px] mx-auto grid grid-cols-12 gap-6">
         
-        <div id="config" class="hidden col-span-12 bg-slate-800 text-white p-6 rounded-xl mb-4 border border-slate-700">
-            <div class="flex gap-4 items-end p-2">
-                <div class="flex-1">
-                    <label class="block text-xs font-bold mb-1 uppercase text-slate-400">GitHub Personal Access Token</label>
-                    <input type="password" id="gh-token" class="w-full bg-slate-700 border-none rounded p-2 text-sm text-white" placeholder="ghp_...">
-                </div>
-                <button onclick="saveSettings()" class="bg-emerald-500 px-6 py-2 rounded text-sm font-bold hover:bg-emerald-600">Valider</button>
-            </div>
-        </div>
-
         <aside class="col-span-12 lg:col-span-3">
             <div id="form-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
                 <h2 id="form-title" class="font-bold text-lg mb-5 border-b pb-2">Nouveau Projet</h2>
@@ -69,24 +71,30 @@
                         <input type="date" id="p-end" class="p-2 rounded-lg bg-slate-50 border text-sm">
                     </div>
                     <div class="flex flex-col gap-2 pt-2">
-                        <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800">Ajouter</button>
+                        <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">Ajouter</button>
                         <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm border border-red-100 hover:bg-red-100">Supprimer</button>
                         <button id="btn-cancel" onclick="resetForm()" class="hidden w-full text-slate-500 py-2 text-sm underline">Annuler</button>
                     </div>
                 </div>
+                <div id="config" class="hidden mt-6 pt-6 border-t border-slate-100">
+                    <label class="block text-xs font-bold mb-1 uppercase text-slate-400">GitHub Token</label>
+                    <input type="password" id="gh-token" class="w-full bg-slate-100 border rounded p-2 text-sm" placeholder="ghp_...">
+                    <button onclick="saveSettings()" class="w-full mt-2 bg-emerald-500 text-white py-2 rounded text-xs font-bold">Valider Token</button>
+                </div>
             </div>
         </aside>
 
-        <section class="col-span-12 lg:col-span-9 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-             <div class="flex justify-between items-center p-4 border-b bg-slate-50/50">
-                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">Tirez le coin en bas à droite pour agrandir la zone</span>
-                <div class="flex gap-4 text-xs font-bold text-slate-500 uppercase">
+        <section class="col-span-12 lg:col-span-9 space-y-4">
+             <div class="flex justify-between items-center px-2 text-[10px] text-slate-400 uppercase font-bold tracking-widest">
+                <span>Tirez le coin bleu en bas à droite pour ajuster la taille libre</span>
+                <div class="flex gap-4">
                     <button onclick="changeView('Day')" class="hover:text-indigo-600">Jour</button>
                     <button onclick="changeView('Week')" class="hover:text-indigo-600">Semaine</button>
                     <button onclick="changeView('Month')" class="hover:text-indigo-600">Mois</button>
                 </div>
             </div>
-            <div id="gantt-container" class="resizable-gantt w-full">
+            
+            <div id="gantt-container" class="resizable-gantt shadow-sm">
                 <div id="gantt-chart"></div>
             </div>
         </section>
@@ -97,17 +105,16 @@
     <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
             <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold">Aide & Astuces</h3>
+                <h3 class="font-bold tracking-wide">Guide de l'Interface</h3>
                 <button onclick="toggleHelp()" class="text-2xl">&times;</button>
             </div>
             <div class="p-6 space-y-4 text-sm text-slate-600">
-                <p>• <b>Redimensionner</b> : Cliquez et glissez le coin inférieur droit du planning pour ajuster la hauteur.</p>
-                <p>• <b>Modifier</b> : Cliquez sur n'importe quelle barre pour changer son statut ou ses dates.</p>
-                <p>• <b>Déplacer</b> : Glissez une barre vers la gauche ou la droite pour décaler un projet.</p>
-                <p>• <b>Auto-save</b> : Tout est sauvegardé sur GitHub après chaque modification.</p>
+                <p>🏗️ <b>Taille libre :</b> Utilisez la poignée bleue dans le coin inférieur droit du planning pour agrandir ou rétrécir la zone (hauteur et largeur).</p>
+                <p>📝 <b>Édition :</b> Cliquez sur une barre pour charger ses infos à gauche.</p>
+                <p>🔄 <b>Synchro :</b> Le dépôt `mikefri/Pilotage_Projet` est mis à jour automatiquement dès qu'un changement est validé.</p>
             </div>
             <div class="p-4 border-t text-right bg-slate-50">
-                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs uppercase">Fermer</button>
+                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs">FERMER</button>
             </div>
         </div>
     </div>
@@ -129,14 +136,14 @@
                 if (res.ok) {
                     projects = await res.json();
                     renderGantt();
-                    document.getElementById('save-status').innerText = "✅ Synchronisé : " + REPO_NAME;
+                    document.getElementById('save-status').innerText = "✅ Connecté : " + REPO_NAME;
                 }
             } catch (e) { console.warn("Erreur data.json"); }
         }
 
         function renderGantt(view = 'Day') {
             if (projects.length === 0) {
-                document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400">Aucun projet à afficher.</p>';
+                document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucune donnée trouvée.</p>';
                 return;
             }
             const tasks = projects.map(p => ({
@@ -177,7 +184,7 @@
             document.getElementById('p-start').value = p.start;
             document.getElementById('p-end').value = p.end;
             document.getElementById('form-title').innerText = "Modifier Projet";
-            document.getElementById('btn-add').innerText = "Enregistrer";
+            document.getElementById('btn-add').innerText = "Mettre à jour";
             document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('btn-cancel').classList.remove('hidden');
             document.getElementById('form-container').classList.add('ring-2', 'ring-indigo-500');
@@ -185,7 +192,7 @@
 
         function deleteProject() {
             const id = document.getElementById('p-id').value;
-            if(id && confirm("Supprimer ce projet ?")) {
+            if(id && confirm("Supprimer définitivement ?")) {
                 projects = projects.filter(p => p.id !== id);
                 renderGantt();
                 resetForm();
@@ -202,7 +209,7 @@
                 start: document.getElementById('p-start').value,
                 end: document.getElementById('p-end').value
             };
-            if(!pData.name || !pData.start || !pData.end) return alert("Champs obligatoires.");
+            if(!pData.name || !pData.start || !pData.end) return alert("Champs requis.");
             if(id) {
                 const index = projects.findIndex(i => i.id === id);
                 projects[index] = { ...projects[index], ...pData };
@@ -229,7 +236,7 @@
 
         async function saveToGitHub(isAuto = false) {
             const token = localStorage.getItem('gh_token');
-            if(!token) return isAuto ? null : alert("Token manquant !");
+            if(!token) return isAuto ? null : alert("Token requis pour sauver !");
             const statusLabel = document.getElementById('save-status');
             statusLabel.innerText = "⏳ Sauvegarde...";
             try {
@@ -241,7 +248,7 @@
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: "Auto-save",
+                        message: "Planning Update",
                         content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
                         sha: file.sha
                     })
