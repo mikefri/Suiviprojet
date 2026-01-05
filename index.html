@@ -108,7 +108,7 @@
                 </div>
 
                 <div class="flex flex-col gap-2 pt-4">
-                    <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
+                    <button id="btn-add" onclick="addOrUpdateProject()" class="progress: parseInt(document.getElementById('p-progress').value) || 0, w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
                     <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-100 transition">Supprimer le projet</button>
                 </div>
 
@@ -185,6 +185,7 @@
             document.getElementById('btn-add').innerText = "Mettre à jour";
             document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('form-overlay').classList.add('modal-active');
+            document.getElementById('p-progress').value = p.progress || 0;
         }
 
         function resetForm() {
