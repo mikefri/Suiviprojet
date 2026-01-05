@@ -303,27 +303,47 @@ async function loadData() {
         }
 
         async function saveToGitHub(isAuto = false) {
-            const token = localStorage.getItem('gh_token');
-            if(!token) return isAuto ? null : alert("Aucun Token GitHub trouvé.");
-            const statusLabel = document.getElementById('save-status');
-            statusLabel.innerText = "⏳ Sauvegarde...";
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                const file = await res.json();
-                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: "Mise à jour planning",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-                if(update.ok) statusLabel.innerText = "✅ Sauvegardé : " + new Date().toLocaleTimeString();
-            } catch (e) { statusLabel.innerText = "❌ Erreur de synchro"; }
+    const token = localStorage.getItem('gh_token');
+    if(!token) return isAuto ? null : alert("Aucun Token GitHub trouvé.");
+    
+    const statusLabel = document.getElementById('save-status');
+    
+    // On rend le badge visible et on met l'état "En cours"
+    statusLabel.style.opacity = "1";
+    statusLabel.innerText = "⏳ SAUVEGARDE...";
+    statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-300 opacity-100";
+    
+    try {
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        const file = await res.json();
+        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/data.json`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: "Mise à jour planning",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
+                sha: file.sha
+            })
+        });
+
+        if(update.ok) {
+            // État Succès : Bordure verte
+            statusLabel.innerText = "✅ ENREGISTRÉ : " + new Date().toLocaleTimeString();
+            statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 transition-all duration-300 opacity-100";
+            
+            // On cache le badge après 5 secondes
+            setTimeout(() => { 
+                statusLabel.style.opacity = "0"; 
+            }, 5000);
         }
+    } catch (e) { 
+        // État Erreur : Bordure rouge
+        statusLabel.innerText = "❌ ERREUR DE SYNCHRO";
+        statusLabel.className = "text-[11px] font-bold px-3 py-1 rounded-full border border-red-200 bg-red-50 text-red-600 transition-all duration-300 opacity-100";
+    }
+}
 
         function changeView(v) { renderGantt(v); }
         function toggleConfig() { document.getElementById('config').classList.toggle('hidden'); }
