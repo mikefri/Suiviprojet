@@ -2,47 +2,193 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Mon Suivi de Projet Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-        .container { padding: 20px; }
-        #gantt-target { background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .gantt .bar-label { fill: #333; font-weight: 500; }
+        .gantt .bar-progress { fill: #3b82f6; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>🚀 Suivi d'Engagements</h1>
-        <div id="gantt-target"></div>
-    </div>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span class="text-blue-600">📊</span> Suivi d'Engagements
+        </h1>
+        <div class="flex gap-4">
+            <button onclick="toggleConfig()" class="text-sm bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg font-medium transition">⚙️ Config GitHub</button>
+            <button onclick="syncToGitHub()" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition">🚀 Publier les modifs</button>
+        </div>
+    </header>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        
+        <div id="config-panel" class="hidden bg-amber-50 border border-amber-200 p-6 rounded-xl mb-8">
+            <h2 class="font-bold mb-4">Paramètres de synchronisation GitHub</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="password" id="gh-token" placeholder="GitHub Personal Access Token" class="p-2 border rounded">
+                <input type="text" id="gh-repo" placeholder="Pseudo/Repo (ex: user/my-project)" class="p-2 border rounded">
+                <button onclick="saveConfig()" class="bg-amber-600 text-white p-2 rounded hover:bg-amber-700">Enregistrer localement</button>
+            </div>
+            <p class="text-xs mt-2 text-amber-700 font-medium">⚠️ Le token est stocké uniquement dans votre navigateur (localStorage).</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <aside class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                <h2 class="text-lg font-bold mb-6">Nouvelle Tâche</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nom du projet</label>
+                        <input type="text" id="t-name" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Responsable</label>
+                        <input type="text" id="t-owner" placeholder="Ex: Julie D." class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Début</label>
+                            <input type="date" id="t-start" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Fin</label>
+                            <input type="date" id="t-end" class="w-full border border-slate-300 rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="addTask()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition mt-4">Ajouter au planning</button>
+                </div>
+            </aside>
+
+            <section class="lg:col-span-3 space-y-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">Timeline</h2>
+                        <div class="flex bg-slate-100 p-1 rounded-lg scale-90">
+                            <button onclick="changeView('Day')" class="px-3 py-1 rounded-md text-sm hover:bg-white transition">Jour</button>
+                            <button onclick="changeView('Week')" class="px-3 py-1 rounded-md text-sm hover:bg-white transition">Semaine</button>
+                            <button onclick="changeView('Month')" class="px-3 py-1 rounded-md text-sm hover:bg-white transition">Mois</button>
+                        </div>
+                    </div>
+                    <div id="gantt-chart" class="overflow-x-auto"></div>
+                </div>
+            </section>
+        </div>
+    </main>
 
     <script>
-        const tasks = [
-            {
-                id: 'Task 1',
-                name: 'Design Interface',
-                start: '2026-01-05',
-                end: '2026-01-10',
-                progress: 50,
-                dependencies: '',
-                custom_class: 'bar-milestone' // Optionnel pour le style
-            },
-            {
-                id: 'Task 2',
-                name: 'Développement API',
-                start: '2026-01-11',
-                end: '2026-01-20',
-                progress: 20,
-                dependencies: 'Task 1'
-            }
-        ];
+        let tasks = [];
+        let gantt;
 
-        const gantt = new Gantt("#gantt-target", tasks, {
-            language: 'fr',
-            view_mode: 'Day', // Peut être Day, Week, Month
-            on_click: task => console.log(task),
-        });
+        // --- INITIALISATION ---
+        window.onload = async () => {
+            // Charger les données depuis data.json (lecture seule au début)
+            try {
+                const response = await fetch('data.json');
+                if (response.ok) {
+                    tasks = await response.json();
+                    renderGantt();
+                }
+            } catch (e) { console.log("Pas de data.json trouvé, démarrage à vide."); }
+            
+            // Pré-remplir la config si elle existe
+            document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
+            document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
+        };
+
+        function renderGantt() {
+            if (tasks.length === 0) return;
+            
+            // Formatage pour Frappe Gantt
+            const formattedTasks = tasks.map(t => ({
+                id: t.id,
+                name: `${t.name} (${t.owner})`,
+                start: t.start,
+                end: t.end,
+                progress: t.progress || 0
+            }));
+
+            document.getElementById('gantt-chart').innerHTML = '';
+            gantt = new Gantt("#gantt-chart", formattedTasks, {
+                language: 'fr',
+                view_mode: 'Day',
+                column_width: 30,
+                on_date_change: (task, start, end) => {
+                    const t = tasks.find(item => item.id === task.id);
+                    t.start = start.toISOString().split('T')[0];
+                    t.end = end.toISOString().split('T')[0];
+                }
+            });
+        }
+
+        // --- ACTIONS ---
+        function addTask() {
+            const newTask = {
+                id: "T-" + Date.now(),
+                name: document.getElementById('t-name').value,
+                owner: document.getElementById('t-owner').value,
+                start: document.getElementById('t-start').value,
+                end: document.getElementById('t-end').value,
+                progress: 0
+            };
+
+            if (!newTask.name || !newTask.start || !newTask.end) return alert("Remplissez les dates !");
+            
+            tasks.push(newTask);
+            renderGantt();
+        }
+
+        function changeView(mode) {
+            gantt.change_view_mode(mode);
+        }
+
+        // --- SYNCHRO GITHUB ---
+        function toggleConfig() {
+            document.getElementById('config-panel').classList.toggle('hidden');
+        }
+
+        function saveConfig() {
+            localStorage.setItem('gh_token', document.getElementById('gh-token').value);
+            localStorage.setItem('gh_repo', document.getElementById('gh-repo').value);
+            alert("Configuration enregistrée dans le navigateur.");
+        }
+
+        async function syncToGitHub() {
+            const token = localStorage.getItem('gh_token');
+            const repo = localStorage.getItem('gh_repo');
+            if (!token || !repo) return alert("Configurez d'abord votre Token et Repo !");
+
+            const path = "data.json";
+            
+            try {
+                // 1. Récupérer le SHA du fichier existant
+                const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                const fileData = await res.json();
+                const sha = fileData.sha;
+
+                // 2. Envoyer le nouveau JSON
+                const update = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Update project tracking data",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(tasks, null, 2)))),
+                        sha: sha
+                    })
+                });
+
+                if (update.ok) alert("✅ Données synchronisées avec succès !");
+                else alert("Erreur lors de la synchro.");
+            } catch (err) {
+                console.error(err);
+                alert("Erreur de connexion à GitHub.");
+            }
+        }
     </script>
 </body>
 </html>
