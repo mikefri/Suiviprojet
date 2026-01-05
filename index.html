@@ -10,21 +10,18 @@
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .details-container { display: none; }
         
-        /* ZONE REDIMENSIONNABLE LIBRE */
         .resizable-gantt {
-            resize: both;        /* Permet le redimensionnement vertical et horizontal */
-            overflow: auto;      /* Nécessaire pour le resize et le scroll */
-            min-height: 400px;
+            resize: both;
+            overflow: auto;
+            min-height: 450px;
             min-width: 300px;
-            max-height: 90vh;
+            max-height: 85vh;
             max-width: 100%;
             border: 2px solid #e2e8f0;
             background: white;
             border-radius: 0.75rem;
-            position: relative;
         }
 
-        /* Style de la poignée de redimensionnement pour la rendre plus visible */
         .resizable-gantt::-webkit-resizer {
             background-color: #4f46e5;
             border: 3px solid white;
@@ -55,42 +52,68 @@
         
         <aside class="col-span-12 lg:col-span-3">
             <div id="form-container" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-6">
-                <h2 id="form-title" class="font-bold text-lg mb-5 border-b pb-2">Nouveau Projet</h2>
+                <h2 id="form-title" class="font-bold text-lg mb-5 border-b pb-2 text-slate-800">Nouveau Projet</h2>
                 <input type="hidden" id="p-id">
+                
                 <div class="space-y-4">
-                    <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nom du projet">
-                    <input type="text" id="p-owner" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Responsable">
-                    <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                        <option value="À faire">⚪ À faire</option>
-                        <option value="En cours" selected>🔵 En cours</option>
-                        <option value="Terminé">🟢 Terminé</option>
-                        <option value="Bloqué">🔴 Bloqué</option>
-                    </select>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="date" id="p-start" class="p-2 rounded-lg bg-slate-50 border text-sm">
-                        <input type="date" id="p-end" class="p-2 rounded-lg bg-slate-50 border text-sm">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nom du projet</label>
+                        <input type="text" id="p-name" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Chantier Alpha">
                     </div>
-                    <div class="flex flex-col gap-2 pt-2">
-                        <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">Ajouter</button>
-                        <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm border border-red-100 hover:bg-red-100">Supprimer</button>
-                        <button id="btn-cancel" onclick="resetForm()" class="hidden w-full text-slate-500 py-2 text-sm underline">Annuler</button>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Responsable</label>
+                        <input type="text" id="p-owner" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nom">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Statut</label>
+                        <select id="p-status" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="À faire">À faire</option>
+                            <option value="En cours" selected>En cours</option>
+                            <option value="Terminé">Terminé</option>
+                            <option value="Bloqué">Bloqué</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Début</label>
+                            <input type="date" id="p-start" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fin</label>
+                            <input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 pt-4">
+                        <button id="btn-add" onclick="addOrUpdateProject()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 transition">
+                            Ajouter au Planning
+                        </button>
+                        
+                        <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm shadow-md hover:bg-red-700 transition">
+                            Supprimer le projet
+                        </button>
+                        
+                        <button id="btn-cancel" onclick="resetForm()" class="hidden w-full text-slate-500 py-2 text-sm font-semibold hover:text-slate-800 underline transition">
+                            Annuler les modifications
+                        </button>
                     </div>
                 </div>
+
                 <div id="config" class="hidden mt-6 pt-6 border-t border-slate-100">
                     <label class="block text-xs font-bold mb-1 uppercase text-slate-400">GitHub Token</label>
                     <input type="password" id="gh-token" class="w-full bg-slate-100 border rounded p-2 text-sm" placeholder="ghp_...">
-                    <button onclick="saveSettings()" class="w-full mt-2 bg-emerald-500 text-white py-2 rounded text-xs font-bold">Valider Token</button>
+                    <button onclick="saveSettings()" class="w-full mt-2 bg-emerald-500 text-white py-2 rounded text-xs font-bold hover:bg-emerald-600">Enregistrer Token</button>
                 </div>
             </div>
         </aside>
 
         <section class="col-span-12 lg:col-span-9 space-y-4">
-             <div class="flex justify-between items-center px-2 text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-                <span>Tirez le coin bleu en bas à droite pour ajuster la taille libre</span>
-                <div class="flex gap-4">
-                    <button onclick="changeView('Day')" class="hover:text-indigo-600">Jour</button>
-                    <button onclick="changeView('Week')" class="hover:text-indigo-600">Semaine</button>
-                    <button onclick="changeView('Month')" class="hover:text-indigo-600">Mois</button>
+             <div class="flex justify-between items-center px-2">
+                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">Tirez le coin bleu en bas à droite pour redimensionner</span>
+                <div class="flex gap-4 text-[11px] font-bold text-slate-500 uppercase">
+                    <button onclick="changeView('Day')" class="hover:text-indigo-600 transition">Jour</button>
+                    <button onclick="changeView('Week')" class="hover:text-indigo-600 transition">Semaine</button>
+                    <button onclick="changeView('Month')" class="hover:text-indigo-600 transition">Mois</button>
                 </div>
             </div>
             
@@ -105,16 +128,17 @@
     <div id="help-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
             <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold tracking-wide">Guide de l'Interface</h3>
-                <button onclick="toggleHelp()" class="text-2xl">&times;</button>
+                <h3 class="font-bold">Aide rapide</h3>
+                <button onclick="toggleHelp()" class="text-2xl leading-none">&times;</button>
             </div>
-            <div class="p-6 space-y-4 text-sm text-slate-600">
-                <p>🏗️ <b>Taille libre :</b> Utilisez la poignée bleue dans le coin inférieur droit du planning pour agrandir ou rétrécir la zone (hauteur et largeur).</p>
-                <p>📝 <b>Édition :</b> Cliquez sur une barre pour charger ses infos à gauche.</p>
-                <p>🔄 <b>Synchro :</b> Le dépôt `mikefri/Pilotage_Projet` est mis à jour automatiquement dès qu'un changement est validé.</p>
+            <div class="p-6 space-y-3 text-sm text-slate-600">
+                <p>• <b>Modifier</b> : Cliquez sur une barre du planning pour charger les données dans le formulaire.</p>
+                <p>• <b>Supprimer</b> : Cliquez sur une barre, puis utilisez le bouton rouge "Supprimer" qui apparaît à gauche.</p>
+                <p>• <b>Dates</b> : Vous pouvez glisser les barres horizontalement pour changer les dates.</p>
+                <p>• <b>Redimensionner</b> : Le coin inférieur droit du cadre gris permet d'ajuster la vue.</p>
             </div>
             <div class="p-4 border-t text-right bg-slate-50">
-                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs">FERMER</button>
+                <button onclick="toggleHelp()" class="bg-slate-900 text-white px-5 py-2 rounded font-bold text-xs uppercase">Fermer</button>
             </div>
         </div>
     </div>
@@ -138,12 +162,12 @@
                     renderGantt();
                     document.getElementById('save-status').innerText = "✅ Connecté : " + REPO_NAME;
                 }
-            } catch (e) { console.warn("Erreur data.json"); }
+            } catch (e) { console.warn("Fichier data.json non trouvé."); }
         }
 
         function renderGantt(view = 'Day') {
             if (projects.length === 0) {
-                document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucune donnée trouvée.</p>';
+                document.getElementById('gantt-chart').innerHTML = '<p class="text-center p-20 text-slate-400 italic">Aucun projet.</p>';
                 return;
             }
             const tasks = projects.map(p => ({
@@ -183,16 +207,18 @@
             document.getElementById('p-status').value = p.status;
             document.getElementById('p-start').value = p.start;
             document.getElementById('p-end').value = p.end;
+
             document.getElementById('form-title').innerText = "Modifier Projet";
             document.getElementById('btn-add').innerText = "Mettre à jour";
             document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('btn-cancel').classList.remove('hidden');
             document.getElementById('form-container').classList.add('ring-2', 'ring-indigo-500');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteProject() {
             const id = document.getElementById('p-id').value;
-            if(id && confirm("Supprimer définitivement ?")) {
+            if(id && confirm("Voulez-vous vraiment supprimer ce projet ?")) {
                 projects = projects.filter(p => p.id !== id);
                 renderGantt();
                 resetForm();
@@ -209,7 +235,8 @@
                 start: document.getElementById('p-start').value,
                 end: document.getElementById('p-end').value
             };
-            if(!pData.name || !pData.start || !pData.end) return alert("Champs requis.");
+            if(!pData.name || !pData.start || !pData.end) return alert("Veuillez remplir le nom et les dates.");
+            
             if(id) {
                 const index = projects.findIndex(i => i.id === id);
                 projects[index] = { ...projects[index], ...pData };
@@ -228,7 +255,7 @@
             document.getElementById('p-start').value = '';
             document.getElementById('p-end').value = '';
             document.getElementById('form-title').innerText = "Nouveau Projet";
-            document.getElementById('btn-add').innerText = "Ajouter";
+            document.getElementById('btn-add').innerText = "Ajouter au Planning";
             document.getElementById('btn-delete').classList.add('hidden');
             document.getElementById('btn-cancel').classList.add('hidden');
             document.getElementById('form-container').classList.remove('ring-2', 'ring-indigo-500');
@@ -236,7 +263,7 @@
 
         async function saveToGitHub(isAuto = false) {
             const token = localStorage.getItem('gh_token');
-            if(!token) return isAuto ? null : alert("Token requis pour sauver !");
+            if(!token) return isAuto ? null : alert("Aucun Token GitHub trouvé.");
             const statusLabel = document.getElementById('save-status');
             statusLabel.innerText = "⏳ Sauvegarde...";
             try {
@@ -248,13 +275,13 @@
                     method: 'PUT',
                     headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        message: "Planning Update",
+                        message: "Mise à jour planning",
                         content: btoa(unescape(encodeURIComponent(JSON.stringify(projects, null, 2)))),
                         sha: file.sha
                     })
                 });
                 if(update.ok) statusLabel.innerText = "✅ Sauvegardé : " + new Date().toLocaleTimeString();
-            } catch (e) { statusLabel.innerText = "❌ Erreur synchro"; }
+            } catch (e) { statusLabel.innerText = "❌ Erreur de synchro"; }
         }
 
         function changeView(v) { renderGantt(v); }
