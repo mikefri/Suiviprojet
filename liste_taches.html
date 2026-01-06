@@ -249,33 +249,61 @@
         }
 
         async function saveToGitHub() {
-            const token = localStorage.getItem('gh_token');
-            if (!token) return alert("Configurez votre token sur la page planning.");
-            const statusLabel = document.getElementById('save-status');
-            statusLabel.innerText = "⏳ SYNCHRONISATION..."; 
-            statusLabel.style.opacity = "1";
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                if (!res.ok) throw new Error("Fichier introuvable");
-                const file = await res.json();
-                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: "Update taches",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-                if (update.ok) {
-                    statusLabel.innerText = "✅ ENREGISTRÉ";
-                    localStorage.setItem('cache_taches', JSON.stringify(allTasks));
-                    setTimeout(() => { statusLabel.style.opacity = "0"; }, 2000);
-                }
-            } catch (e) { statusLabel.innerText = "❌ ERREUR SYNC"; }
+    const token = localStorage.getItem('gh_token');
+    if (!token) return alert("Configurez votre token sur la page planning.");
+    
+    const statusLabel = document.getElementById('save-status');
+    const dot = document.getElementById('workflow-dot');
+    const text = document.getElementById('workflow-text');
+
+    // --- ÉTAT : SYNCHRONISATION EN COURS ---
+    statusLabel.innerText = "⏳ SYNCHRONISATION..."; 
+    statusLabel.style.opacity = "1";
+    dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse"; // Orange clignotant
+    text.innerText = "ACTIONS : SYNC...";
+
+    try {
+        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!res.ok) throw new Error("Fichier introuvable");
+        const file = await res.json();
+        
+        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: "Update taches",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
+                sha: file.sha
+            })
+        });
+
+        if (update.ok) {
+            // --- ÉTAT : RÉUSSITE ---
+            statusLabel.innerText = "✅ ENREGISTRÉ";
+            dot.className = "w-2 h-2 rounded-full bg-emerald-500"; // Vert
+            text.innerText = "ACTIONS : SUCCESS";
+            
+            localStorage.setItem('cache_taches', JSON.stringify(allTasks));
+
+            setTimeout(() => {
+                statusLabel.style.opacity = "0";
+                dot.className = "w-2 h-2 rounded-full bg-slate-300"; // Retour au gris
+                text.innerText = "ACTIONS : IDLE";
+            }, 3000);
+        } else {
+            throw new Error("Erreur HTTP");
         }
+    } catch (e) {
+        // --- ÉTAT : ERREUR ---
+        statusLabel.innerText = "❌ ERREUR SYNC";
+        dot.className = "w-2 h-2 rounded-full bg-red-500"; // Rouge
+        text.innerText = "ACTIONS : ERROR";
+        console.error(e);
+    }
+}
 
         window.onload = init;
     </script>
