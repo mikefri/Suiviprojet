@@ -102,19 +102,42 @@
 
             <hr class="border-slate-100">
 
-            <div>
-                <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-3">Utilisation du Graphique</p>
-                <div class="space-y-4 text-sm text-slate-600">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-4 bg-indigo-500 rounded shrink-0 mt-1"></div>
-                        <p><b>Cliquer sur une barre :</b> Ouvre les détails du projet pour le modifier, le supprimer ou voir sa <b>liste de tâches</b>.</p>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-4 border-2 border-dashed border-indigo-400 rounded shrink-0 mt-1"></div>
-                        <p><b>Glisser / Déplacer :</b> Vous pouvez déplacer les barres latéralement pour changer les dates, ou étirer les bords pour changer la durée.</p>
-                    </div>
-                </div>
+ <div>
+    <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-3">Gestion Visuelle & Suivi</p>
+    <div class="space-y-4 text-sm text-slate-600">
+        
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
+                <span class="text-lg">↔️</span>
             </div>
+            <div>
+                <p><b>Décaler les dates :</b> Cliquez au <u>centre</u> d'une barre et faites-la glisser vers la gauche ou la droite pour changer les dates de début et de fin sans changer la durée.</p>
+            </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
+                <span class="text-lg">↕️</span>
+            </div>
+            <div>
+                <p><b>Ajuster la durée :</b> Cliquez sur le <u>bord droit</u> d'une barre et tirez-le pour prolonger ou raccourcir la durée du projet.</p>
+            </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
+                <span class="text-lg">📊</span>
+            </div>
+            <div>
+                <p><b>Suivi de l'avancement :</b> Cliquez sur le petit <u>curseur à l'intérieur</u> de la barre pour modifier le pourcentage de progression (%) directement à la souris.</p>
+            </div>
+        </div>
+
+        <div class="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-100 text-[11px] italic text-amber-700">
+            💡 Chaque mouvement de barre enregistre automatiquement les nouvelles données sur GitHub.
+        </div>
+    </div>
+</div>
         </div>
 
         <button onclick="closeHelpModal()" class="w-full mt-8 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md">
