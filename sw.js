@@ -1,4 +1,18 @@
-self.addEventListener('fetch', function(event) {
-  // Ce script permet à l'app de fonctionner même avec une connexion instable
-  event.respondWith(fetch(event.request));
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('pilotage-v1').then((cache) => {
+      return cache.addAll([
+        './',
+        './index.html',
+        './manifest.json',
+        './icon.png'
+      ]);
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
