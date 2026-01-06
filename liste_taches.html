@@ -6,119 +6,92 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .done { text-decoration: line-through; opacity: 0.5; }
+        .modal-animate { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body class="bg-[#F1F5F9] text-slate-900 font-sans">
 
-</nav>
+    <div id="custom-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 modal-animate border border-slate-200">
+            <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 mb-2">Confirmation</h3>
+            <p id="modal-text" class="text-slate-500 text-center text-sm mb-6"></p>
+            <div class="flex gap-3">
+                <button id="modal-cancel" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
+                <button id="modal-confirm" class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow-md">Supprimer</button>
+            </div>
+        </div>
+    </div>
 
+    <div id="edit-modal" class="hidden fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 modal-animate border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Modifier la tâche</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Description</label>
+                    <input type="text" id="edit-task-desc" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Heures</label>
+                        <input type="number" id="edit-task-time" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Responsable</label>
+                        <select id="edit-task-who" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeEditModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
+                <button id="btn-save-edit" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-md">Enregistrer</button>
+            </div>
+        </div>
+    </div>
 
-
-
-<nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
         <div class="flex items-center gap-6">
             <h1 class="text-xl font-bold flex items-center gap-2">
                 <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
             </h1>
-
-            
             <div id="workflow-status" class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500">
-    <span id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
-    <span id="workflow-text">ACTIONS : IDLE</span>
-</div>
-
-
-                  
-     
-        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">
-            ← Retour au Planning
-        </a>
-        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
+                <span id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span id="workflow-text">ACTIONS : IDLE</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">← Retour au Planning</a>
+            <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
+        </div>
     </nav>
 
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    <main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mt-20">
+    <main class="max-w-2xl mx-auto mt-20 mb-10">
         <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-6">
             <h1 id="project-title" class="text-2xl font-bold text-slate-800">Chargement du projet...</h1>
             <p id="project-info" class="text-slate-500 text-sm mt-1 italic"></p>
         </header>
 
-<section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-    <div class="flex flex-wrap gap-2">
-        <input type="text" id="task-desc" placeholder="Nouvelle tâche..." 
-               class="flex-1 min-w-[200px] p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-        
-        <input type="number" id="task-time" placeholder="Hrs" title="Temps estimé en heures"
-               class="w-20 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-
-        <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
-        
-        <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
-            +
-        </button>
-    </div>
-</section>
-
-        <div id="task-list" class="space-y-3">
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+            <div class="flex flex-wrap gap-2">
+                <input type="text" id="task-desc" placeholder="Nouvelle tâche..." 
+                       class="flex-1 min-w-[200px] p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="number" id="task-time" placeholder="Hrs" title="Temps estimé en heures"
+                       class="w-20 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
+                <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">+</button>
             </div>
+        </section>
+
+        <div id="task-list" class="space-y-3"></div>
     </main>
-
-
-
-
-
-<div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
-        <h3 class="text-lg font-bold text-slate-800 mb-4">Modifier la tâche</h3>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Description</label>
-                <input type="text" id="edit-task-desc" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div class="flex gap-4">
-                <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Heures</label>
-                    <input type="number" id="edit-task-time" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Responsable</label>
-                    <select id="edit-task-who" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none"></select>
-                </div>
-            </div>
-        </div>
-        <div class="flex gap-3 mt-8">
-            <button onclick="closeEditModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
-            <button id="btn-save-edit" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-md">Enregistrer</button>
-        </div>
-    </div>
-</div>
-
-
-
-
-
-
-    
 
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
-        let allTasks = []; // Toutes les tâches de tous les projets
+        let allTasks = [];
         let responsables = [];
         let currentProjectId = new URLSearchParams(window.location.search).get('id');
+        let currentEditingId = null;
 
-        // Fonctions de camouflage
         const dec = (str) => { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } };
         const enc = (str) => btoa(unescape(encodeURIComponent(str)));
 
@@ -131,118 +104,134 @@
         }
 
         async function loadData() {
-    // --- NOUVEAU : CHARGEMENT DU CACHE LOCAL (INSTANTANÉ) ---
-    const localTasks = localStorage.getItem('cache_taches');
-    const localResp = localStorage.getItem('cache_responsables');
-    const localProj = localStorage.getItem('cache_projects');
+            const localTasks = localStorage.getItem('cache_taches');
+            const localResp = localStorage.getItem('cache_responsables');
+            const localProj = localStorage.getItem('cache_projects');
 
-    if (localTasks) allTasks = JSON.parse(localTasks);
-    if (localResp) responsables = JSON.parse(localResp);
-    
-    // Affichage immédiat des données du cache
-    if (responsables.length > 0) {
-        document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
-    }
-    if (localProj && currentProjectId) {
-        const p = JSON.parse(localProj).find(i => i.id === currentProjectId);
-        if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
-    }
-    renderTasks();
+            if (localTasks) allTasks = JSON.parse(localTasks);
+            if (localResp) responsables = JSON.parse(localResp);
+            
+            if (responsables.length > 0) {
+                const options = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+                document.getElementById('task-who').innerHTML = options;
+            }
+            if (localProj && currentProjectId) {
+                const p = JSON.parse(localProj).find(i => i.id === currentProjectId);
+                if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
+            }
+            renderTasks();
 
-    try {
-        // --- 1. Synchronisation des responsables ---
-        const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
-        if (resR.ok) {
-            responsables = await resR.json();
-            localStorage.setItem('cache_responsables', JSON.stringify(responsables));
-            document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+            try {
+                const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
+                if (resR.ok) {
+                    responsables = await resR.json();
+                    localStorage.setItem('cache_responsables', JSON.stringify(responsables));
+                    document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+                }
+                const resT = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/taches.json?t=${Date.now()}`);
+                if (resT.ok) {
+                    allTasks = await resT.json();
+                    localStorage.setItem('cache_taches', JSON.stringify(allTasks));
+                }
+                const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
+                if (resP.ok) {
+                    const projects = await resP.json();
+                    localStorage.setItem('cache_projects', JSON.stringify(projects));
+                    const p = projects.find(i => i.id === currentProjectId);
+                    if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
+                }
+                renderTasks();
+            } catch (e) { console.error("Erreur sync", e); }
         }
 
-        // --- 2. Synchronisation des tâches existantes ---
-        const resT = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/taches.json?t=${Date.now()}`);
-        if (resT.ok) {
-            allTasks = await resT.json();
-            localStorage.setItem('cache_taches', JSON.stringify(allTasks));
-        }
+        function renderTasks() {
+            const listEl = document.getElementById('task-list');
+            const projectTasks = allTasks.filter(t => t.projectId === currentProjectId);
 
-        // --- 3. Synchronisation du titre (data.json) ---
-        const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-        if (resP.ok) {
-            const projects = await resP.json();
-            localStorage.setItem('cache_projects', JSON.stringify(projects));
-            const p = projects.find(i => i.id === currentProjectId);
-            if(p) document.getElementById('project-title').innerText = "📝 Liste des Tâches : " + p.name;
-        }
+            if(projectTasks.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-slate-400 py-10 italic">Aucune tâche pour le moment.</p>';
+                return;
+            }
 
-        // Mise à jour finale après réception des données GitHub
-        renderTasks();
-
-    } catch (e) { 
-        console.error("Délai GitHub ou erreur réseau : utilisation des données locales.", e); 
-    }
-}
-
-function renderTasks() {
-    const listEl = document.getElementById('task-list');
-    // On ne filtre que les tâches liées à ce projet
-    const projectTasks = allTasks.filter(t => t.projectId === currentProjectId);
-
-    if(projectTasks.length === 0) {
-        listEl.innerHTML = '<p class="text-center text-slate-400 py-10 italic">Aucune tâche pour le moment.</p>';
-        return;
-    }
-
-    listEl.innerHTML = projectTasks.map(t => `
-        <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm ${t.done ? 'done' : ''}">
-            <div class="flex items-center gap-4">
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')" class="w-5 h-5 accent-indigo-600 cursor-pointer">
-                <div>
-                    <p class="font-bold text-slate-700">${t.desc}</p>
-                    <div class="flex gap-3 items-center mt-1">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">👤 ${dec(t.who)}</p>
-                        <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">
-                            ⏱️ ${t.time} h
-                        </span>
+            listEl.innerHTML = projectTasks.map(t => `
+                <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm ${t.done ? 'done' : ''}">
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')" class="w-5 h-5 accent-indigo-600 cursor-pointer">
+                        <div>
+                            <p class="font-bold text-slate-700">${t.desc}</p>
+                            <div class="flex gap-3 items-center mt-1">
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">👤 ${dec(t.who)}</p>
+                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">⏱️ ${t.time} h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openEditModal('${t.id}')" class="text-slate-300 hover:text-indigo-600 p-2 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                        <button onclick="deleteTask('${t.id}')" class="text-red-200 hover:text-red-600 p-2 text-xl leading-none transition">&times;</button>
                     </div>
                 </div>
-            </div>
+            `).join('');
+        }
 
-            <div class="flex items-center gap-2">
-                <button onclick="openEditModal('${t.id}')" class="text-slate-300 hover:text-indigo-600 p-2 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                </button>
-                <button onclick="deleteTask('${t.id}')" class="text-red-200 hover:text-red-500 p-2 text-xl leading-none transition">
-                    &times;
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
+        // --- FONCTIONS DE GESTION ---
 
-async function addTask() {
-    const desc = document.getElementById('task-desc').value.trim();
-    const time = document.getElementById('task-time').value || 0; // Récupère le temps
-    const who = document.getElementById('task-who').value;
-    
-    if(!desc) return;
+        function showConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = message;
+            modal.classList.remove('hidden');
+            const btnConfirm = document.getElementById('modal-confirm');
+            const btnCancel = document.getElementById('modal-cancel');
+            const newBtnConfirm = btnConfirm.cloneNode(true);
+            btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+            newBtnConfirm.onclick = () => { modal.classList.add('hidden'); onConfirm(); };
+            btnCancel.onclick = () => modal.classList.add('hidden');
+        }
 
-    const newTask = {
-        id: "TASK-" + Date.now(),
-        projectId: currentProjectId,
-        desc: desc,
-        time: time, // Nouveau champ enregistré dans taches.json
-        who: who,
-        done: false
-    };
+        function openEditModal(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+            currentEditingId = id;
+            document.getElementById('edit-task-desc').value = task.desc;
+            document.getElementById('edit-task-time').value = task.time;
+            const selectWho = document.getElementById('edit-task-who');
+            selectWho.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+            selectWho.value = task.who;
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('btn-save-edit').onclick = saveTaskEdit;
+        }
 
-    allTasks.push(newTask);
-    document.getElementById('task-desc').value = '';
-    document.getElementById('task-time').value = ''; // Reset du champ temps
-    renderTasks();
-    await saveToGitHub();
-}
+        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); currentEditingId = null; }
+
+        async function saveTaskEdit() {
+            const task = allTasks.find(t => t.id === currentEditingId);
+            if (!task) return;
+            const d = document.getElementById('edit-task-desc').value.trim();
+            if(!d) return;
+            task.desc = d;
+            task.time = document.getElementById('edit-task-time').value;
+            task.who = document.getElementById('edit-task-who').value;
+            renderTasks();
+            closeEditModal();
+            await saveToGitHub();
+        }
+
+        async function addTask() {
+            const desc = document.getElementById('task-desc').value.trim();
+            const time = document.getElementById('task-time').value || 0;
+            const who = document.getElementById('task-who').value;
+            if(!desc) return;
+            const newTask = { id: "TASK-" + Date.now(), projectId: currentProjectId, desc: desc, time: time, who: who, done: false };
+            allTasks.push(newTask);
+            document.getElementById('task-desc').value = '';
+            document.getElementById('task-time').value = '';
+            renderTasks();
+            await saveToGitHub();
+        }
 
         async function toggleTask(id) {
             const t = allTasks.find(item => item.id === id);
@@ -252,58 +241,41 @@ async function addTask() {
         }
 
         async function deleteTask(id) {
-            allTasks = allTasks.filter(t => t.id !== id);
-            renderTasks();
-            await saveToGitHub();
+            showConfirm("Supprimer la tâche ?", "Cette action est définitive.", async () => {
+                allTasks = allTasks.filter(t => t.id !== id);
+                renderTasks();
+                await saveToGitHub();
+            });
         }
 
         async function saveToGitHub() {
-    const token = localStorage.getItem('gh_token');
-    if (!token) return alert("Configurez votre token sur la page planning.");
-    
-    const statusLabel = document.getElementById('save-status');
-    statusLabel.innerText = "⏳ SYNCHRONISATION..."; 
-    statusLabel.style.opacity = "1";
-
-    try {
-        // 1. Récupération du SHA actuel pour autoriser la modification
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-        
-        if (!res.ok) throw new Error("Impossible de récupérer le fichier");
-        const file = await res.json();
-        
-        // 2. Envoi des données (allTasks contient déjà vos modifs locales)
-        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
-            method: 'PUT',
-            headers: { 
-                'Authorization': `token ${token}`, 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({
-                message: "Update taches",
-                // Encodage propre pour gérer les accents et le camouflage
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
-                sha: file.sha
-            })
-        });
-
-        if (update.ok) {
-            statusLabel.innerText = "✅ ENREGISTRÉ";
-            // IMPORTANT : On ne relance PAS loadData() ici pour éviter que 
-            // le délai de GitHub (cache) ne fasse revenir d'anciennes données.
-            setTimeout(() => {
-                statusLabel.style.opacity = "0";
-            }, 2000);
-        } else {
-            throw new Error("Échec de la mise à jour");
+            const token = localStorage.getItem('gh_token');
+            if (!token) return alert("Configurez votre token sur la page planning.");
+            const statusLabel = document.getElementById('save-status');
+            statusLabel.innerText = "⏳ SYNCHRONISATION..."; 
+            statusLabel.style.opacity = "1";
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (!res.ok) throw new Error("Fichier introuvable");
+                const file = await res.json();
+                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/taches.json`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Update taches",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(allTasks, null, 2)))),
+                        sha: file.sha
+                    })
+                });
+                if (update.ok) {
+                    statusLabel.innerText = "✅ ENREGISTRÉ";
+                    localStorage.setItem('cache_taches', JSON.stringify(allTasks));
+                    setTimeout(() => { statusLabel.style.opacity = "0"; }, 2000);
+                }
+            } catch (e) { statusLabel.innerText = "❌ ERREUR SYNC"; }
         }
-    } catch (e) { 
-        console.error(e);
-        statusLabel.innerText = "❌ ERREUR SYNC"; 
-    }
-}
 
         window.onload = init;
     </script>
