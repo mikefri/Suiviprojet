@@ -44,6 +44,22 @@
         <div id="respo-list" class="space-y-3">
             </div>
     </main>
+        
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-200 scale-95 transition-transform duration-200">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4 mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+        </div>
+        <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 mb-2">Confirmation</h3>
+        <p id="modal-text" class="text-slate-500 text-center text-sm mb-6"></p>
+        <div class="flex gap-3">
+            <button id="modal-cancel" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
+            <button id="modal-confirm" class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow-md">Supprimer</button>
+        </div>
+    </div>
+</div>
 
     <script>
         const REPO_NAME = "mikefri/Pilotage_Projet";
@@ -114,12 +130,18 @@
             await saveToGitHub();
         }
 
-        async function removeRespo(encodedName) {
-            if(!confirm(`Supprimer ce responsable ?`)) return;
+function removeRespo(encodedName) {
+    const displayName = decodeName(encodedName);
+    showConfirm(
+        "Supprimer ?", 
+        `Êtes-vous sûr de vouloir retirer ${displayName} de l'équipe ?`, 
+        async () => {
             responsables = responsables.filter(r => r !== encodedName);
             renderList();
             await saveToGitHub();
         }
+    );
+}
 
         // --- SAUVEGARDE SUR GITHUB ---
         async function saveToGitHub() {
@@ -172,6 +194,26 @@
         statusLabel.innerText = "❌ ERREUR";
         console.error("Détails de l'erreur :", e);
     }
+}
+
+        function showConfirm(title, message, onConfirm) {
+    const modal = document.getElementById('custom-modal');
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-text').innerText = message;
+    modal.classList.remove('hidden');
+
+    const btnConfirm = document.getElementById('modal-confirm');
+    const btnCancel = document.getElementById('modal-cancel');
+
+    // Nettoyage des événements précédents
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+    newBtnConfirm.onclick = () => {
+        modal.classList.add('hidden');
+        onConfirm();
+    };
+    btnCancel.onclick = () => modal.classList.add('hidden');
 }
 
         window.onload = loadRespos;
