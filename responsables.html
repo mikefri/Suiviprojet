@@ -150,56 +150,66 @@ function removeRespo(encodedName) {
 
         // --- SAUVEGARDE SUR GITHUB ---
         async function saveToGitHub() {
-    const token = localStorage.getItem('gh_token');
-    if(!token) {
-        alert("Token GitHub manquant. Configurez-le sur la page Planning.");
-        return;
-    }
-    
-    const statusLabel = document.getElementById('save-status');
-    statusLabel.innerText = "⏳ SYNCHRONISATION...";
-    statusLabel.style.opacity = "1";
+            const token = localStorage.getItem('gh_token');
+            if (!token) {
+                alert("Token GitHub manquant. Configurez-le sur la page Planning.");
+                return;
+            }
 
-    try {
-        // 1. Récupérer le SHA du fichier actuel pour autoriser l'écriture
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-        
-        if (!res.ok) throw new Error("Erreur lors de la récupération du fichier");
-        const file = await res.json();
-        
-        // 2. Envoyer la mise à jour (utilise la variable locale 'responsables' mise à jour)
-        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-            method: 'PUT',
-            headers: { 
-                'Authorization': `token ${token}`, 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({
-                message: "Mise à jour responsables (encodés)",
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
-                sha: file.sha
-            })
-        });
+            const statusLabel = document.getElementById('save-status');
+            const dot = document.getElementById('workflow-dot');
+            const text = document.getElementById('workflow-text');
 
-        if(update.ok) {
-            statusLabel.innerText = "✅ ENREGISTRÉ";
-            
-            // IMPORTANT : On ne recharge PAS loadAllData() ou loadResponsables() ici.
-            // On fait confiance à la variable locale 'responsables' que l'on vient d'afficher.
-            
-            setTimeout(() => {
-                statusLabel.style.opacity = "0";
-            }, 2000);
-        } else {
-            throw new Error("Échec de la mise à jour GitHub");
+            // 1. ÉTAT : EN COURS (Orange)
+            statusLabel.innerText = "⏳ SYNCHRONISATION...";
+            statusLabel.style.opacity = "1";
+            dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+            text.innerText = "ACTIONS : SYNC...";
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+
+                if (!res.ok) throw new Error("Erreur lors de la récupération du fichier");
+                const file = await res.json();
+
+                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: "Mise à jour responsables (encodés)",
+                        content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
+                        sha: file.sha
+                    })
+                });
+
+                if (update.ok) {
+                    // 2. ÉTAT : RÉUSSITE (Vert)
+                    statusLabel.innerText = "✅ ENREGISTRÉ";
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                    text.innerText = "ACTIONS : SUCCESS";
+
+                    setTimeout(() => {
+                        statusLabel.style.opacity = "0";
+                        // 3. RETOUR À L'ÉTAT INITIAL (Gris)
+                        dot.className = "w-2 h-2 rounded-full bg-slate-300";
+                        text.innerText = "ACTIONS : IDLE";
+                    }, 3000);
+                } else {
+                    throw new Error("Échec de la mise à jour GitHub");
+                }
+            } catch (e) {
+                // ÉTAT : ERREUR (Rouge)
+                statusLabel.innerText = "❌ ERREUR";
+                dot.className = "w-2 h-2 rounded-full bg-red-500";
+                text.innerText = "ACTIONS : ERROR";
+                console.error("Détails de l'erreur :", e);
+            }
         }
-    } catch (e) {
-        statusLabel.innerText = "❌ ERREUR";
-        console.error("Détails de l'erreur :", e);
-    }
-}
 
         function showConfirm(title, message, onConfirm) {
     const modal = document.getElementById('custom-modal');
