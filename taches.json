@@ -62,5 +62,13 @@
     "time": "0",
     "who": "QmFycmF1ZCBM",
     "done": true
+  },
+  {
+    "id": "TASK-1767867780645",
+    "projectId": "ID-1767867655885",
+    "desc": "mettre à jour les ZS anomalie",
+    "time": 0,
+    "who": "QmFycmF1ZCBM",
+    "done": false
   }
 ]
