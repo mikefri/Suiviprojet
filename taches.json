@@ -70,5 +70,13 @@
     "time": 0,
     "who": "QmFycmF1ZCBM",
     "done": false
+  },
+  {
+    "id": "TASK-1767867810098",
+    "projectId": "ID-1767867655885",
+    "desc": "Vérification des filières de stocklage",
+    "time": 0,
+    "who": "QmFycmF1ZCBM",
+    "done": false
   }
 ]
