@@ -78,5 +78,13 @@
     "time": 0,
     "who": "QmFycmF1ZCBM",
     "done": false
+  },
+  {
+    "id": "TASK-1767867853406",
+    "projectId": "ID-1767867655885",
+    "desc": "Analyse des emplacements de stockage",
+    "time": 0,
+    "who": "QmFycmF1ZCBM",
+    "done": false
   }
 ]
