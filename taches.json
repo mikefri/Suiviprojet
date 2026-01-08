@@ -54,5 +54,13 @@
     "time": "2",
     "who": "RGVmaXggQw==",
     "done": false
+  },
+  {
+    "id": "TASK-1767867744186",
+    "projectId": "ID-1767867655885",
+    "desc": "Suppression zone vide anomalie",
+    "time": 0,
+    "who": "QmFycmF1ZCBM",
+    "done": false
   }
 ]
