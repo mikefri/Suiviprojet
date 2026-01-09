@@ -1,14 +1,5 @@
 [
   {
-    "id": "ID-1767646423741",
-    "name": "Supermarché",
-    "owner": "RnJpc2NoaGVyeiBN",
-    "status": "En cours",
-    "start": "2026-01-05",
-    "end": "2026-02-07",
-    "progress": 31
-  },
-  {
     "id": "ID-1767646460573",
     "name": "Gestions des contenants vides",
     "owner": "QmF0aXN0YSBzYW5jaGVzIEw=",
