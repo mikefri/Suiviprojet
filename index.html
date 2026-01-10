@@ -7,29 +7,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfFtIqMSOddPS6NG4AQqDJ2W3KaBfKzUE",
-            authDomain: "pilotage-gantt.firebaseapp.com",
-            databaseURL: "https://pilotage-gantt-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "pilotage-gantt",
-            storageBucket: "pilotage-gantt.firebasestorage.app",
-            messagingSenderId: "1064606456262",
-            appId: "1:1064606456262:web:39e19391518d3cab93fac7"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDfFtIqMSOddPS6NG4AQqDJ2W3KaBfKzUE",
+        authDomain: "pilotage-gantt.firebaseapp.com",
+        databaseURL: "https://pilotage-gantt-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "pilotage-gantt",
+        storageBucket: "pilotage-gantt.firebasestorage.app",
+        messagingSenderId: "1064606456262",
+        appId: "1:1064606456262:web:39e19391518d3cab93fac7"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // Initialisation
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        // Export pour le script classique
-        window.fbDB = db;
-        window.fbMethods = { ref, set, onValue, update, remove };
+    // Export pour les fonctions globales du reste de la page
+    window.fbDB = db;
+    window.fbMethods = { ref, set, onValue, update, remove };
+
+    // --- DÉTECTION DE CONNEXION EN TEMPS RÉEL ---
+    const connectedRef = ref(db, ".info/connected");
+    onValue(connectedRef, (snap) => {
+        const statusDot = document.getElementById('workflow-dot');
+        const statusText = document.getElementById('workflow-text');
         
-        loadAllData();
-    </script>
+        if (snap.val() === true) {
+            statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+            statusText.innerText = "BASE DE DONNÉES : CONNECTÉE";
+            // On lance le chargement des données seulement quand on est connecté
+            loadAllData(); 
+        } else {
+            statusDot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+            statusText.innerText = "BASE DE DONNÉES : HORS-LIGNE";
+        }
+    });
+</script>
 
     <style>
         body { background-color: #F1F5F9 !important; }
