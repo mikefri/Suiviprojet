@@ -142,11 +142,15 @@
                 document.getElementById('edit-task-who').innerHTML = options;
             });
 
-            // 2. Charger le nom du Projet
-            onValue(ref(window.fbDB, 'projets/' + currentProjectId), (snap) => {
-                const p = snap.val();
-                if(p) document.getElementById('project-title').innerText = "📝 Liste : " + p.name;
-            });
+// 2. Charger le nom du Projet
+onValue(ref(window.fbDB, 'projects/' + currentProjectId), (snap) => {
+    const p = snap.val();
+    if (p && p.name) {
+        document.getElementById('project-title').innerText = "📝 Liste : " + p.name;
+    } else {
+        document.getElementById('project-title').innerText = "📝 Projet inconnu";
+    }
+});
 
             // 3. Charger les Tâches (Écoute en temps réel)
             onValue(ref(window.fbDB, 'taches'), (snap) => {
