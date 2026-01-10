@@ -5,14 +5,49 @@
     <title>Gantt des Tâches - Firebase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .done { opacity: 0.5; }
+        .done { opacity: 0.4; filter: grayscale(1); }
         .modal-animate { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* Style pour la barre Gantt */
-        .gantt-row { height: 40px; position: relative; border-bottom: 1px solid #f1f5f9; }
-        .task-bar { height: 24px; position: absolute; top: 8px; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: bold; color: white; cursor: pointer; transition: all 0.2s; }
-        .task-bar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        /* Grille de fond pour le Gantt */
+        .gantt-grid {
+            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px);
+            background-size: 40px 100%; /* Représente une unité de temps */
+        }
+
+        .gantt-row { 
+            height: 50px; 
+            position: relative; 
+            border-bottom: 1px solid #f1f5f9; 
+            display: flex;
+            align-items: center;
+        }
+
+        .task-bar { 
+            height: 28px; 
+            position: absolute; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 12px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: white; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .task-bar:hover { transform: scale(1.02); z-index: 10; }
+        
+        .task-label {
+            position: absolute;
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            pointer-events: none;
+        }
     </style>
 
     <script type="module">
@@ -31,18 +66,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
         window.fbDB = db;
         window.fbMethods = { ref, set, onValue, update, remove };
 
         onValue(ref(db, ".info/connected"), (snap) => {
-            const dot = document.getElementById('workflow-dot');
-            if (snap.val() === true) {
-                dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                loadData(); 
-            } else {
-                dot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
-            }
+            if (snap.val() === true) loadData(); 
         });
     </script>
 </head>
@@ -58,10 +86,14 @@
                     <input type="date" id="edit-task-date" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none">
                 </div>
                 <select id="edit-task-who" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none"></select>
+                <div class="flex items-center gap-2 py-2">
+                    <input type="checkbox" id="edit-task-done" class="w-5 h-5 accent-indigo-600">
+                    <label for="edit-task-done" class="font-bold text-slate-700">Marquer comme terminé</label>
+                </div>
             </div>
             <div class="flex gap-3 mt-8">
                 <button onclick="closeEditModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50">Fermer</button>
-                <button onclick="saveTaskEdit()" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-md">Enregistrer</button>
+                <button onclick="saveTaskEdit()" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold shadow-md">Enregistrer</button>
             </div>
         </div>
     </div>
@@ -71,12 +103,11 @@
             <h1 class="text-xl font-bold flex items-center gap-2">
                 <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
             </h1>
-            <div id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></div>
         </div>
         <a href="index.html" class="text-indigo-600 font-bold hover:underline text-sm">← Retour au Planning</a>
     </nav>
 
-    <main class="max-w-4xl mx-auto mt-10 mb-10 px-4">
+    <main class="max-w-5xl mx-auto mt-10 mb-10 px-4">
         <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-6">
             <h1 id="project-title" class="text-2xl font-bold text-slate-800 tracking-tight">Chargement...</h1>
             <p id="project-info" class="text-slate-500 text-sm mt-1 italic"></p>
@@ -84,21 +115,24 @@
 
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6">
             <div class="flex flex-wrap gap-2">
-                <input type="text" id="task-desc" placeholder="Nouvelle tâche..." class="flex-1 min-w-[200px] p-2.5 rounded-lg bg-slate-50 border border-slate-100 outline-none">
+                <input type="text" id="task-desc" placeholder="Tâche..." class="flex-1 p-2.5 rounded-lg bg-slate-50 border border-slate-100 outline-none">
                 <input type="number" id="task-time" placeholder="Hrs" class="w-16 p-2.5 rounded-lg bg-slate-50 border border-slate-100 outline-none">
                 <select id="task-who" class="p-2.5 rounded-lg bg-slate-50 border border-slate-100 outline-none w-32"></select>
                 <input type="date" id="task-date" class="p-2.5 rounded-lg bg-slate-50 border border-slate-100 outline-none text-xs">
-                <button onclick="addTask()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition">+</button>
+                <button onclick="addTask()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-indigo-700">+</button>
             </div>
         </section>
 
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest">Chronologie des tâches</h2>
-                <div id="total-hours" class="text-xs font-bold text-indigo-600">Total: 0h</div>
+                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline interactive (Nom | Qui | Date)</h2>
+                <div id="total-hours" class="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 h</div>
             </div>
-            <div id="gantt-container" class="p-4 overflow-x-auto min-h-[200px] relative">
-                </div>
+            
+            <div class="overflow-x-auto">
+                <div id="gantt-container" class="p-6 min-w-[800px] min-h-[300px] relative gantt-grid">
+                    </div>
+            </div>
         </section>
     </main>
 
@@ -113,14 +147,12 @@
 
         function loadData() {
             const { onValue, ref } = window.fbMethods;
-
             onValue(ref(window.fbDB, 'responsables'), (snap) => {
                 responsables = snap.val() ? Object.values(snap.val()) : [];
                 const options = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
                 document.getElementById('task-who').innerHTML = options;
                 document.getElementById('edit-task-who').innerHTML = options;
             });
-
             onValue(ref(window.fbDB, 'projects/' + currentProjectId), (snap) => {
                 currentProject = snap.val();
                 if(currentProject) {
@@ -129,7 +161,6 @@
                     renderTasks();
                 }
             });
-
             onValue(ref(window.fbDB, 'taches'), (snap) => {
                 allTasks = snap.val() ? Object.values(snap.val()) : [];
                 renderTasks();
@@ -142,37 +173,35 @@
             const projectTasks = allTasks.filter(t => t.projectId === currentProjectId)
                                          .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            let totalHrs = 0;
-            if(projectTasks.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-300 py-10 italic">Aucune tâche</p>';
-                return;
-            }
-
-            // Calculer l'étendue du Gantt (en jours)
             const pStart = new Date(currentProject.start);
             const pEnd = new Date(currentProject.end);
-            const totalDays = Math.max(1, (pEnd - pStart) / (24*60*60*1000));
+            const totalDays = Math.max(7, (pEnd - pStart) / (24*60*60*1000) + 5);
 
-            container.innerHTML = projectTasks.map(t => {
+            let totalHrs = 0;
+            container.innerHTML = projectTasks.map((t, idx) => {
                 totalHrs += parseFloat(t.time || 0);
                 const tDate = t.date ? new Date(t.date) : pStart;
-                
-                // Calculer position X (début)
                 const diffDays = (tDate - pStart) / (24*60*60*1000);
-                const leftPercent = Math.max(0, Math.min(90, (diffDays / totalDays) * 100));
+                const leftPos = Math.max(0, (diffDays / totalDays) * 100);
+                const dateFr = t.date ? new Date(t.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) : '--/--';
 
                 return `
                 <div class="gantt-row ${t.done ? 'done' : ''}">
-                    <div class="absolute left-0 text-[10px] text-slate-400 font-bold top-3 w-20 truncate">${t.desc}</div>
-                    <div class="task-bar bg-indigo-500 shadow-sm shadow-indigo-200" 
-                         style="left: calc(80px + ${leftPercent}%); width: 100px;" 
+                    <div class="task-label left-0 w-32 truncate" title="${t.desc}">${t.desc}</div>
+                    
+                    <div class="task-bar bg-indigo-600" 
+                         style="left: calc(140px + ${leftPos}%); width: 120px;" 
                          onclick="openEditModal('${t.id}')">
-                         ${t.time}h
+                         <span class="truncate mr-1 text-[9px] opacity-80 uppercase">${dec(t.who)}</span>
+                         <span class="ml-auto bg-white/20 px-1.5 rounded">${t.time}h</span>
                     </div>
+
+                    <div class="absolute text-[10px] font-bold text-slate-400" 
+                         style="left: calc(270px + ${leftPos}%);">${dateFr}</div>
                 </div>`;
             }).join('');
 
-            document.getElementById('total-hours').innerText = `Total: ${totalHrs}h`;
+            document.getElementById('total-hours').innerText = `${totalHrs} h total`;
         }
 
         async function addTask() {
@@ -189,13 +218,13 @@
         }
 
         function openEditModal(id) {
-            const task = allTasks.find(t => t.id === id);
-            if (!task) return;
+            const t = allTasks.find(x => x.id === id);
             currentEditingId = id;
-            document.getElementById('edit-task-desc').value = task.desc;
-            document.getElementById('edit-task-time').value = task.time;
-            document.getElementById('edit-task-date').value = task.date || '';
-            document.getElementById('edit-task-who').value = task.who;
+            document.getElementById('edit-task-desc').value = t.desc;
+            document.getElementById('edit-task-time').value = t.time;
+            document.getElementById('edit-task-date').value = t.date || '';
+            document.getElementById('edit-task-who').value = t.who;
+            document.getElementById('edit-task-done').checked = t.done || false;
             document.getElementById('edit-modal').classList.remove('hidden');
         }
 
@@ -206,7 +235,8 @@
                 desc: document.getElementById('edit-task-desc').value,
                 time: document.getElementById('edit-task-time').value,
                 date: document.getElementById('edit-task-date').value,
-                who: document.getElementById('edit-task-who').value
+                who: document.getElementById('edit-task-who').value,
+                done: document.getElementById('edit-task-done').checked
             });
             closeEditModal();
         }
