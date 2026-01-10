@@ -292,23 +292,48 @@
             document.getElementById('project-selector').value = p.id;
             openForm();
         }
-// Cette fonction vide tous les champs du formulaire
+// Cette fonction vide tout (à garder telle quelle)
 function resetFields() {
     document.getElementById('p-id').value = '';
     document.getElementById('p-name').value = '';
-    document.getElementById('p-owner').value = ''; // Remet le responsable à "Choisir..."
+    document.getElementById('p-owner').value = ''; 
     document.getElementById('p-status').value = 'En cours';
     document.getElementById('p-start').value = '';
     document.getElementById('p-end').value = '';
     document.getElementById('p-progress').value = 0;
     document.getElementById('prog-val').innerText = "0%";
-    document.getElementById('btn-delete').classList.add('hidden'); // Cache le bouton supprimer
-    document.getElementById('project-selector').value = ""; // Remet le sélecteur sur "Nouveau"
+    document.getElementById('btn-delete').classList.add('hidden');
+    document.getElementById('project-selector').value = "";
 }
-        // Cette fonction est appelée par ton bouton "+ Nouveau / Modifier"
-function openForm() { 
-    resetFields(); // On vide tout avant d'afficher
+
+// LA CORRECTION EST ICI :
+function openForm(isEdit = false) { 
+    // On ne vide les champs QUE si ce n'est PAS une édition
+    if (!isEdit) {
+        resetFields(); 
+    }
     document.getElementById('form-overlay').classList.add('modal-active'); 
+}
+
+// Et on modifie légèrement editProject pour prévenir openForm
+function editProject(id) {
+    const p = projects.find(i => i.id === id);
+    if(!p) return;
+    
+    // 1. On remplit les champs d'abord
+    document.getElementById('p-id').value = p.id;
+    document.getElementById('p-name').value = p.name;
+    document.getElementById('p-owner').value = p.owner;
+    document.getElementById('p-status').value = p.status;
+    document.getElementById('p-start').value = p.start;
+    document.getElementById('p-end').value = p.end;
+    document.getElementById('p-progress').value = p.progress;
+    document.getElementById('prog-val').innerText = p.progress + "%";
+    document.getElementById('btn-delete').classList.remove('hidden');
+    document.getElementById('project-selector').value = p.id;
+    
+    // 2. On ouvre la modale avec l'argument "true" pour ne pas reset
+    openForm(true); 
 }
         function closeForm() {
             document.getElementById('form-overlay').classList.remove('modal-active');
