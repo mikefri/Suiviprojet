@@ -51,6 +51,18 @@
         .gantt .grid-row text:hover { fill: #4338ca; text-decoration: underline; }
 
         .gantt .bar-label { font-weight: 600; font-size: 11px; fill: #1e293b; }
+
+        /* Affiche le texte du pourcentage sur la barre */
+.gantt .bar-progress {
+    stroke-width: 0;
+}
+
+/* On personnalise les étiquettes de progression si elles existent */
+.gantt .bar-label.progress-label {
+    fill: #ffffff !important; /* Texte blanc pour contraster avec la couleur de la barre */
+    font-size: 10px;
+    font-weight: bold;
+}
     </style>
 </head>
 <body class="bg-[#F1F5F9] text-slate-900 font-sans">
@@ -196,7 +208,7 @@
 
             const tasks = projects.map(p => ({
                 id: p.id,
-                name: `${p.name} (${dec(p.owner)})`, // Remet le nom du responsable
+                name: `${p.name} (${dec(p.owner)}) - ${p.progress || 0}%`,
                 start: p.start || new Date().toISOString().split('T')[0],
                 end: p.end || new Date().toISOString().split('T')[0],
                 progress: p.progress || 0
