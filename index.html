@@ -292,8 +292,24 @@
             document.getElementById('project-selector').value = p.id;
             openForm();
         }
-
-        function openForm() { document.getElementById('form-overlay').classList.add('modal-active'); }
+// Cette fonction vide tous les champs du formulaire
+function resetFields() {
+    document.getElementById('p-id').value = '';
+    document.getElementById('p-name').value = '';
+    document.getElementById('p-owner').value = ''; // Remet le responsable à "Choisir..."
+    document.getElementById('p-status').value = 'En cours';
+    document.getElementById('p-start').value = '';
+    document.getElementById('p-end').value = '';
+    document.getElementById('p-progress').value = 0;
+    document.getElementById('prog-val').innerText = "0%";
+    document.getElementById('btn-delete').classList.add('hidden'); // Cache le bouton supprimer
+    document.getElementById('project-selector').value = ""; // Remet le sélecteur sur "Nouveau"
+}
+        // Cette fonction est appelée par ton bouton "+ Nouveau / Modifier"
+function openForm() { 
+    resetFields(); // On vide tout avant d'afficher
+    document.getElementById('form-overlay').classList.add('modal-active'); 
+}
         function closeForm() {
             document.getElementById('form-overlay').classList.remove('modal-active');
             document.getElementById('p-id').value = '';
