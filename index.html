@@ -27,10 +27,8 @@
         window.fbDB = db;
         window.fbMethods = { ref, set, onValue, update, remove };
 
-        // Lancement initial
         if (typeof loadAllData === "function") loadAllData();
 
-        // Status de connexion
         const connectedRef = ref(db, ".info/connected");
         onValue(connectedRef, (snap) => {
             const dot = document.getElementById('workflow-dot');
@@ -44,15 +42,9 @@
 
     <style>
         body { background-color: #F1F5F9 !important; }
-        /* Style pour rendre le texte à gauche cliquable */
-        .gantt .grid-row text { cursor: pointer; fill: #6366f1; font-weight: bold; }
-        .gantt .grid-row text:hover { fill: #4338ca; text-decoration: underline; }
-        
         .resizable-gantt { resize: vertical; overflow: auto; min-height: 500px; max-height: 85vh; width: 100%; border: 1px solid #e2e8f0; background: white; border-radius: 0.75rem; }
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* Personnalisation des barres */
         .gantt .bar-progress { fill: #6366f1; }
         .gantt .bar-label { font-weight: 600; font-size: 11px; fill: #1e293b; }
     </style>
@@ -72,23 +64,19 @@
         </div>
         <div class="flex gap-3 items-center">
             <div id="save-status" class="text-[11px] font-bold text-emerald-500 opacity-0 transition-opacity italic mr-4"></div>
-            <button onclick="openForm()" class="bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700 font-bold shadow-sm transition">+ Nouveau</button>
+            <button onclick="openForm()" class="bg-indigo-600 text-white px-5 py-2 rounded-xl hover:bg-indigo-700 font-bold shadow-sm transition">+ Nouveau / Modifier</button>
         </div>
     </nav>
 
     <main class="p-6 max-w-[1920px] mx-auto">
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex flex-col">
-                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Vue d'ensemble</span>
-                <p class="text-xs text-slate-500 italic">Astuce : Cliquez sur une barre pour voir les tâches, sur le nom pour modifier le projet.</p>
-            </div>
+        <div class="flex justify-between items-center mb-4 px-2 text-[10px] text-slate-400 uppercase font-bold tracking-widest italic">
+            <span>Planning Opérationnel</span>
             <div class="flex gap-2 text-[11px] font-bold text-slate-500 uppercase bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                 <button onclick="changeView('Day')" class="px-4 py-1.5 hover:bg-slate-50 rounded-lg transition">Jour</button>
                 <button onclick="changeView('Week')" class="px-4 py-1.5 hover:bg-slate-50 rounded-lg transition border-x border-slate-100">Semaine</button>
                 <button onclick="changeView('Month')" class="px-4 py-1.5 hover:bg-slate-50 rounded-lg transition">Mois</button>
             </div>
         </div>
-
         <div id="gantt-container" class="resizable-gantt shadow-sm">
             <div id="gantt-chart"></div>
         </div>
@@ -97,13 +85,21 @@
     <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <aside class="bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md">
             <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                <h2 class="font-bold text-xl text-slate-800">Configuration Projet</h2>
+                <h2 class="font-bold text-xl text-slate-800">Gestion Projet</h2>
                 <button onclick="closeForm()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
+
+            <div class="mb-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                <label class="block text-[10px] font-bold text-indigo-400 uppercase mb-2 ml-1">Modifier un projet existant ?</label>
+                <select id="project-selector" onchange="loadProjectInForm(this.value)" class="w-full p-2.5 rounded-xl bg-white border border-indigo-200 outline-none text-sm font-bold text-slate-700 shadow-sm">
+                    <option value="">-- Créer un nouveau projet --</option>
+                </select>
+            </div>
+
             <input type="hidden" id="p-id">
-            <div class="space-y-5">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Nom du projet</label>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Nom</label>
                     <input type="text" id="p-name" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 transition">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -127,11 +123,11 @@
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Avancement (%)</label>
                     <input type="range" id="p-progress" min="0" max="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                    <div class="text-right text-[10px] font-bold text-slate-400 mt-1" id="prog-val">50%</div>
+                    <div class="text-right text-[10px] font-bold text-slate-400 mt-1" id="prog-val">0%</div>
                 </div>
                 <div class="flex flex-col gap-3 pt-6 border-t border-slate-100">
-                    <button onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer les modifications</button>
-                    <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-3 rounded-2xl font-bold text-sm hover:bg-red-100 transition">Supprimer définitivement</button>
+                    <button onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Enregistrer</button>
+                    <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-3 rounded-2xl font-bold text-sm hover:bg-red-100 transition">Supprimer ce projet</button>
                 </div>
             </div>
         </aside>
@@ -144,89 +140,77 @@
         let currentView = 'Day';
 
         const dec = (str) => { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } };
-        const getColor = (name) => {
-            let hash = 0;
-            if (!name) return '#6366f1';
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            return `hsl(${Math.abs(hash) % 360}, 60%, 50%)`;
-        };
 
         function loadAllData() {
             if (!window.fbMethods) return setTimeout(loadAllData, 200);
             const { onValue, ref } = window.fbMethods;
 
-            // Chargement Responsables
             onValue(ref(window.fbDB, 'responsables'), (snap) => {
                 const data = snap.val();
                 responsables = data ? Object.values(data) : [];
                 document.getElementById('p-owner').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('') || '<option value="">Aucun membre</option>';
             });
 
-            // Chargement Projets Live
             onValue(ref(window.fbDB, 'projects'), (snap) => {
                 const data = snap.val();
                 projects = data ? Object.values(data) : [];
                 renderGantt();
+                updateProjectSelector(); // Mise à jour du menu déroulant
             });
         }
 
-function renderGantt(view = currentView) {
-    currentView = view;
-    const chartEl = document.getElementById('gantt-chart');
-    
-    // Si la base est vide (ce qui est ton cas actuellement)
-    if (!projects || projects.length === 0) { 
-        chartEl.innerHTML = `
-            <div class="flex flex-col items-center justify-center p-20 text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                <p class="italic">Ta base de données est vide.</p>
-                <p class="text-xs">Clique sur "+ Nouveau" pour créer ton premier projet.</p>
-            </div>`;
-        return; 
-    }
-
-    try {
-        const tasks = projects.map(p => ({
-            id: p.id,
-            name: p.name || "Projet sans nom",
-            start: p.start || new Date().toISOString().split('T')[0], 
-            end: p.end || new Date().toISOString().split('T')[0], 
-            progress: p.progress || 0
-        }));
-
-        chartEl.innerHTML = '';
-        gantt = new Gantt("#gantt-chart", tasks, {
-            language: 'fr', 
-            view_mode: view, 
-            bar_height: 35,
-            on_click: task => {
-                // ATTENTION : Vérifie que ce nom de fichier est EXACTEMENT le même que le tien
-                window.location.href = `liste_taches.html?id=${task.id}`;
-            },
-            on_date_change: (task, start, end) => updateQuick(task.id, { 
-                start: start.toISOString().split('T')[0], 
-                end: end.toISOString().split('T')[0] 
-            }),
-            on_progress_change: (task, progress) => updateQuick(task.id, { progress })
-        });
-
-        // Rendre les noms cliquables pour l'édition
-        setTimeout(() => {
-            document.querySelectorAll('.gantt .grid-row text').forEach((el, index) => {
-                el.style.cursor = "pointer";
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    if(projects[index]) editProject(projects[index].id);
-                };
+        // Met à jour la liste des projets dans la modale
+        function updateProjectSelector() {
+            const selector = document.getElementById('project-selector');
+            if (!selector) return;
+            let html = '<option value="">-- Créer un nouveau projet --</option>';
+            projects.forEach(p => {
+                html += `<option value="${p.id}">${p.name}</option>`;
             });
-        }, 200);
+            selector.innerHTML = html;
+        }
 
-    } catch (e) {
-        console.error("Erreur de rendu Gantt:", e);
-    }
-}
+        // Charge les données du projet sélectionné dans le formulaire
+        function loadProjectInForm(id) {
+            if (!id) {
+                closeForm();
+                openForm(); // Réinitialise à vide
+                return;
+            }
+            editProject(id);
+        }
+
+        function renderGantt(view = currentView) {
+            currentView = view;
+            const chartEl = document.getElementById('gantt-chart');
+            if (!projects || projects.length === 0) {
+                chartEl.innerHTML = `<div class="p-20 text-center text-slate-400 italic">Base vide. Cliquez sur "+ Nouveau"</div>`;
+                return;
+            }
+
+            const tasks = projects.map(p => ({
+                id: p.id,
+                name: p.name || "Sans nom",
+                start: p.start || new Date().toISOString().split('T')[0],
+                end: p.end || new Date().toISOString().split('T')[0],
+                progress: p.progress || 0
+            }));
+
+            chartEl.innerHTML = '';
+            gantt = new Gantt("#gantt-chart", tasks, {
+                language: 'fr',
+                view_mode: view,
+                bar_height: 35,
+                on_click: task => {
+                    window.location.href = `liste_taches.html?id=${task.id}`;
+                },
+                on_date_change: (task, start, end) => updateQuick(task.id, {
+                    start: start.toISOString().split('T')[0],
+                    end: end.toISOString().split('T')[0]
+                }),
+                on_progress_change: (task, progress) => updateQuick(task.id, { progress })
+            });
+        }
 
         async function updateQuick(id, data) {
             await window.fbMethods.update(window.fbMethods.ref(window.fbDB, 'projects/' + id), data);
@@ -247,19 +231,18 @@ function renderGantt(view = currentView) {
 
             await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'projects/' + id), pData);
             closeForm();
-            showStatus("PROJET ENREGISTRÉ");
+            showStatus("ENREGISTRÉ");
         }
 
         async function deleteProject() {
             const id = document.getElementById('p-id').value;
-            if (id && confirm("Voulez-vous vraiment supprimer ce projet ?")) {
+            if (id && confirm("Supprimer définitivement ce projet ?")) {
                 await window.fbMethods.remove(window.fbMethods.ref(window.fbDB, 'projects/' + id));
                 closeForm();
-                showStatus("PROJET SUPPRIMÉ");
+                showStatus("SUPPRIMÉ");
             }
         }
 
-        // --- UI ---
         function editProject(id) {
             const p = projects.find(i => i.id === id);
             if(!p) return;
@@ -272,13 +255,18 @@ function renderGantt(view = currentView) {
             document.getElementById('p-progress').value = p.progress;
             document.getElementById('prog-val').innerText = p.progress + "%";
             document.getElementById('btn-delete').classList.remove('hidden');
+            document.getElementById('project-selector').value = p.id;
             openForm();
         }
 
         function openForm() { document.getElementById('form-overlay').classList.add('modal-active'); }
-        function closeForm() { 
+        function closeForm() {
             document.getElementById('form-overlay').classList.remove('modal-active');
             document.getElementById('p-id').value = '';
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-progress').value = 0;
+            document.getElementById('prog-val').innerText = "0%";
+            document.getElementById('project-selector').value = "";
             document.getElementById('btn-delete').classList.add('hidden');
         }
 
