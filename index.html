@@ -21,28 +21,36 @@
         appId: "1:1064606456262:web:39e19391518d3cab93fac7"
     };
 
-    // Initialisation
+    // 1. Initialisation immédiate
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Export pour les fonctions globales du reste de la page
+    // 2. Export immédiat pour tes fonctions globales
     window.fbDB = db;
     window.fbMethods = { ref, set, onValue, update, remove };
 
-    // --- DÉTECTION DE CONNEXION EN TEMPS RÉEL ---
+    // 3. Lancer le chargement des données sans attendre le statut de connexion
+    // Cela permet à Firebase d'utiliser son cache local si besoin
+    if (typeof loadAllData === "function") {
+        loadAllData();
+    } else if (typeof loadRespos === "function") {
+        loadRespos();
+    }
+
+    // 4. Mise à jour visuelle du badge (en arrière-plan)
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
         const statusDot = document.getElementById('workflow-dot');
         const statusText = document.getElementById('workflow-text');
         
-        if (snap.val() === true) {
-            statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
-            statusText.innerText = "BASE DE DONNÉES : CONNECTÉE";
-            // On lance le chargement des données seulement quand on est connecté
-            loadAllData(); 
-        } else {
-            statusDot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
-            statusText.innerText = "BASE DE DONNÉES : HORS-LIGNE";
+        if (statusDot && statusText) {
+            if (snap.val() === true) {
+                statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                statusText.innerText = "BASE DE DONNÉES : CONNECTÉE";
+            } else {
+                statusDot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+                statusText.innerText = "BASE DE DONNÉES : HORS-LIGNE";
+            }
         }
     });
 </script>
