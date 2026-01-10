@@ -9,10 +9,9 @@
         .modal-animate { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* Grille de fond pour le Gantt */
         .gantt-grid {
             background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px);
-            background-size: 40px 100%; /* Représente une unité de temps */
+            background-size: 40px 100%;
         }
 
         .gantt-row { 
@@ -53,6 +52,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfFtIqMSOddPS6NG4AQqDJ2W3KaBfKzUE",
@@ -66,15 +66,53 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
+
         window.fbDB = db;
         window.fbMethods = { ref, set, onValue, update, remove };
 
-        onValue(ref(db, ".info/connected"), (snap) => {
-            if (snap.val() === true) loadData(); 
+        // --- GESTION DE LA CONNEXION ---
+        window.login = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                errorEl.classList.add('hidden');
+            } catch (e) {
+                errorEl.innerText = "Identifiants incorrects";
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            if (user) {
+                if (loginScreen) loginScreen.classList.add('hidden');
+                loadData(); // Charge les données SEULEMENT si connecté
+            } else {
+                if (loginScreen) loginScreen.classList.remove('hidden');
+            }
         });
     </script>
 </head>
 <body class="bg-[#F8FAFC] text-slate-900 font-sans">
+
+    <div id="login-screen" class="fixed inset-0 bg-slate-100 flex items-center justify-center z-[200] hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200">
+            <div class="text-center mb-8">
+                <span class="bg-indigo-600 text-white p-3 rounded-2xl text-xl font-bold">GP</span>
+                <h1 class="text-2xl font-bold mt-4 text-slate-800">Accès Restreint</h1>
+                <p class="text-slate-500 text-sm">Veuillez vous connecter</p>
+            </div>
+            <div class="space-y-4">
+                <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
+                <input type="password" id="login-password" placeholder="Mot de passe" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
+                <button onclick="login()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Se connecter</button>
+                <p id="login-error" class="text-red-500 text-xs text-center hidden font-bold mt-2"></p>
+            </div>
+        </div>
+    </div>
 
     <div id="edit-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 modal-animate border border-slate-200">
@@ -130,8 +168,7 @@
             </div>
             
             <div class="overflow-x-auto">
-                <div id="gantt-container" class="p-6 min-w-[800px] min-h-[300px] relative gantt-grid">
-                    </div>
+                <div id="gantt-container" class="p-6 min-w-[800px] min-h-[300px] relative gantt-grid"></div>
             </div>
         </section>
     </main>
@@ -146,13 +183,18 @@
         const dec = (str) => { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } };
 
         function loadData() {
+            if (!window.fbMethods) return setTimeout(loadData, 100);
             const { onValue, ref } = window.fbMethods;
+
+            // Chargement Responsables
             onValue(ref(window.fbDB, 'responsables'), (snap) => {
                 responsables = snap.val() ? Object.values(snap.val()) : [];
                 const options = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
                 document.getElementById('task-who').innerHTML = options;
                 document.getElementById('edit-task-who').innerHTML = options;
             });
+
+            // Chargement Projet
             onValue(ref(window.fbDB, 'projects/' + currentProjectId), (snap) => {
                 currentProject = snap.val();
                 if(currentProject) {
@@ -161,6 +203,8 @@
                     renderTasks();
                 }
             });
+
+            // Chargement Tâches
             onValue(ref(window.fbDB, 'taches'), (snap) => {
                 allTasks = snap.val() ? Object.values(snap.val()) : [];
                 renderTasks();
