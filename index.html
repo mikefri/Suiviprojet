@@ -252,21 +252,37 @@
             showStatus("SYNCHRONISÉ");
         }
 
-        async function addOrUpdateProject() {
-            const id = document.getElementById('p-id').value || "ID-" + Date.now();
-            const pData = {
-                id,
-                name: document.getElementById('p-name').value,
-                owner: document.getElementById('p-owner').value,
-                status: document.getElementById('p-status').value,
-                start: document.getElementById('p-start').value,
-                end: document.getElementById('p-end').value,
-                progress: parseInt(document.getElementById('p-progress').value) || 0
-            };
-            await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'projects/' + id), pData);
-            closeForm();
-            showStatus("ENREGISTRÉ");
+async function addOrUpdateProject() {
+    const startVal = document.getElementById('p-start').value;
+    const endVal = document.getElementById('p-end').value;
+
+    // --- BLOCAGE SÉCURITÉ DATES ---
+    if (startVal && endVal) {
+        const start = new Date(startVal);
+        const end = new Date(endVal);
+
+        if (end < start) {
+            alert("Erreur : La date de FIN ne peut pas être avant la date de DÉBUT.");
+            return; // Arrête l'enregistrement
         }
+    }
+    // ------------------------------
+
+    const id = document.getElementById('p-id').value || "ID-" + Date.now();
+    const pData = {
+        id,
+        name: document.getElementById('p-name').value,
+        owner: document.getElementById('p-owner').value,
+        status: document.getElementById('p-status').value,
+        start: startVal,
+        end: endVal,
+        progress: parseInt(document.getElementById('p-progress').value) || 0
+    };
+
+    await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'projects/' + id), pData);
+    closeForm();
+    showStatus("ENREGISTRÉ");
+}
 
         async function deleteProject() {
             const id = document.getElementById('p-id').value;
@@ -293,6 +309,7 @@
             openForm();
         }
 // Cette fonction vide tout (à garder telle quelle)
+// Vide tous les champs
 function resetFields() {
     document.getElementById('p-id').value = '';
     document.getElementById('p-name').value = '';
@@ -306,10 +323,10 @@ function resetFields() {
     document.getElementById('project-selector').value = "";
 }
 
-// LA CORRECTION EST ICI :
+// Ouvre la modale
 function openForm(isEdit = false) { 
-    // On ne vide les champs QUE si ce n'est PAS une édition
-    if (!isEdit) {
+    // On ne vide les champs QUE si ce n'est PAS une modification
+    if (isEdit !== true) {
         resetFields(); 
     }
     document.getElementById('form-overlay').classList.add('modal-active'); 
