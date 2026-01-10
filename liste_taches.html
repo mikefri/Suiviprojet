@@ -49,6 +49,28 @@
             background: rgba(248, 250, 252, 0.9);
             padding-right: 8px;
         }
+
+        /* STYLE DE LA LIGNE AUJOURD'HUI */
+        .today-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #ef4444;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .today-label {
+            position: absolute;
+            top: -25px;
+            left: -50%;
+            background: #ef4444;
+            color: white;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
     </style>
 
     <script type="module">
@@ -171,12 +193,13 @@
 
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline Pleine Largeur (Nom | Qui | Date)</h2>
+                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline Interactive</h2>
                 <div id="total-hours" class="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 h</div>
             </div>
             
-            <div id="gantt-scroll-container" class="overflow-x-auto">
-                <div id="gantt-container" class="p-6 min-h-[400px] relative gantt-grid"></div>
+            <div id="gantt-scroll-container" class="overflow-x-auto relative">
+                <div id="gantt-container" class="p-6 min-h-[400px] relative gantt-grid pt-10">
+                    </div>
             </div>
         </section>
     </main>
@@ -226,22 +249,31 @@
             const diffTime = Math.abs(pEnd - pStart);
             const projectDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-            // --- CALCUL LARGEUR INTELLIGENTE ---
-            // On calcule la largeur disponible de l'écran moins les marges
-            const availableWidth = scrollContainer.offsetWidth - 180; // -180 pour compenser les labels de gauche
-            // On définit dayWidth pour que tout le projet tienne dans l'écran, 
-            // mais on garde un minimum de 40px pour que ce soit lisible.
-            const dayWidth = Math.max(40, availableWidth / projectDurationDays);
+            const availableWidth = scrollContainer.offsetWidth - 200;
+            const dayWidth = Math.max(45, availableWidth / projectDurationDays);
             
             const timelineWidth = projectDurationDays * dayWidth;
-            container.style.width = `${timelineWidth + 180}px`; 
+            container.style.width = `${timelineWidth + 200}px`; 
             container.style.backgroundSize = `${dayWidth}px 100%`;
+
+            // --- GESTION DE LA LIGNE "AUJOURD'HUI" ---
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            let todayLineHTML = '';
+            if (today >= pStart && today <= pEnd) {
+                const daysFromStartToday = (today - pStart) / (24*60*60*1000);
+                const todayPosPx = daysFromStartToday * dayWidth;
+                todayLineHTML = `
+                    <div class="today-line" style="left: calc(140px + ${todayPosPx}px);">
+                        <div class="today-label">Aujourd'hui</div>
+                    </div>`;
+            }
 
             const projectTasks = allTasks.filter(t => t.projectId === currentProjectId)
                                          .sort((a, b) => new Date(a.date) - new Date(b.date));
 
             let totalHrs = 0;
-            container.innerHTML = projectTasks.map((t) => {
+            const tasksHTML = projectTasks.map((t) => {
                 totalHrs += parseFloat(t.time || 0);
                 const tDate = t.date ? new Date(t.date) : pStart;
                 const daysFromStart = (tDate - pStart) / (24*60*60*1000);
@@ -252,19 +284,19 @@
                 <div class="gantt-row ${t.done ? 'done' : ''}">
                     <div class="task-label left-0 w-32 truncate font-bold" title="${t.desc}">${t.desc}</div>
                     <div class="task-bar bg-indigo-600" 
-                         style="left: calc(140px + ${leftPosPx}px); width: ${Math.min(120, dayWidth * 0.9)}px;" 
+                         style="left: calc(140px + ${leftPosPx}px); width: 130px;" 
                          onclick="openEditModal('${t.id}')">
                          <span class="truncate mr-1 text-[9px] opacity-90 uppercase">${dec(t.who)}</span>
                     </div>
                     <div class="absolute text-[9px] font-black text-slate-400" 
-                         style="left: calc(150px + ${leftPosPx}px + ${Math.min(120, dayWidth * 0.9)}px);">${dateFr}</div>
+                         style="left: calc(280px + ${leftPosPx}px);">${dateFr}</div>
                 </div>`;
             }).join('');
 
+            container.innerHTML = todayLineHTML + tasksHTML;
             document.getElementById('total-hours').innerText = `${totalHrs} h total`;
         }
 
-        // Écouter le redimensionnement de la fenêtre pour ajuster le Gantt
         window.addEventListener('resize', renderTasks);
 
         async function addTask() {
