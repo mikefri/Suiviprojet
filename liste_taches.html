@@ -58,6 +58,36 @@
         </div>
     </div>
 
+    <div id="edit-modal" class="hidden fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 modal-animate border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Modifier la tâche</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Description</label>
+                    <input type="text" id="edit-task-desc" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Heures</label>
+                        <input type="number" id="edit-task-time" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Échéance</label>
+                        <input type="date" id="edit-task-date" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Responsable</label>
+                    <select id="edit-task-who" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none"></select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeEditModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
+                <button id="btn-save-edit" class="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-md">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
         <div class="flex items-center gap-6">
             <h1 class="text-xl font-bold flex items-center gap-2">
@@ -85,6 +115,7 @@
                 <input type="text" id="task-desc" placeholder="Nouvelle tâche..." class="flex-1 min-w-[200px] p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none">
                 <input type="number" id="task-time" placeholder="Hrs" class="w-20 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none">
                 <select id="task-who" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none w-40"></select>
+                <input type="date" id="task-date" class="p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none text-sm">
                 <button onclick="addTask()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">+</button>
             </div>
         </section>
@@ -101,6 +132,7 @@
         let allTasks = [];
         let responsables = [];
         let currentProjectId = new URLSearchParams(window.location.search).get('id');
+        let currentEditingId = null;
 
         const dec = (str) => { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } };
 
@@ -112,7 +144,9 @@
             onValue(ref(window.fbDB, 'responsables'), (snap) => {
                 const data = snap.val();
                 responsables = data ? Object.values(data) : [];
-                document.getElementById('task-who').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+                const options = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
+                document.getElementById('task-who').innerHTML = options;
+                document.getElementById('edit-task-who').innerHTML = options;
             });
 
             // 2. Charger le Projet (Nom + Responsable Projet)
@@ -147,6 +181,8 @@
             let totalHrs = 0;
             listEl.innerHTML = projectTasks.map(t => {
                 totalHrs += parseFloat(t.time || 0);
+                const taskDate = t.date ? `<span class="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold border border-amber-100">📅 ${new Date(t.date).toLocaleDateString('fr-FR')}</span>` : '';
+                
                 return `
                 <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm ${t.done ? 'done' : ''}">
                     <div class="flex items-center gap-4">
@@ -156,10 +192,16 @@
                             <div class="flex gap-3 items-center mt-1">
                                 <p class="text-[10px] text-slate-400 font-bold uppercase">👤 ${dec(t.who)}</p>
                                 <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">⏱️ ${t.time} h</span>
+                                ${taskDate}
                             </div>
                         </div>
                     </div>
-                    <button onclick="deleteTask('${t.id}')" class="text-red-200 hover:text-red-600 p-2 text-xl leading-none transition">&times;</button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openEditModal('${t.id}')" class="text-slate-300 hover:text-indigo-600 p-2 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button onclick="deleteTask('${t.id}')" class="text-red-200 hover:text-red-600 p-2 text-xl leading-none transition">&times;</button>
+                    </div>
                 </div>`;
             }).join('');
 
@@ -171,18 +213,50 @@
             const desc = document.getElementById('task-desc').value.trim();
             const time = document.getElementById('task-time').value || 0;
             const who = document.getElementById('task-who').value;
+            const date = document.getElementById('task-date').value;
+
             if(!desc) return;
             const taskId = "TASK-" + Date.now();
             await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'taches/' + taskId), { 
-                id: taskId, projectId: currentProjectId, desc, time, who, done: false 
+                id: taskId, projectId: currentProjectId, desc, time, who, date, done: false 
             });
+            
             document.getElementById('task-desc').value = '';
             document.getElementById('task-time').value = '';
+            document.getElementById('task-date').value = '';
+            showStatus("✅ TÂCHE AJOUTÉE");
         }
 
         async function toggleTask(id) {
             const task = allTasks.find(t => t.id === id);
             if(task) await window.fbMethods.update(window.fbMethods.ref(window.fbDB, 'taches/' + id), { done: !task.done });
+        }
+
+        function openEditModal(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+            currentEditingId = id;
+            document.getElementById('edit-task-desc').value = task.desc;
+            document.getElementById('edit-task-time').value = task.time;
+            document.getElementById('edit-task-date').value = task.date || '';
+            document.getElementById('edit-task-who').value = task.who;
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('btn-save-edit').onclick = saveTaskEdit;
+        }
+
+        function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+
+        async function saveTaskEdit() {
+            const d = document.getElementById('edit-task-desc').value.trim();
+            if(!d || !currentEditingId) return;
+            await window.fbMethods.update(window.fbMethods.ref(window.fbDB, 'taches/' + currentEditingId), {
+                desc: d,
+                time: document.getElementById('edit-task-time').value,
+                date: document.getElementById('edit-task-date').value,
+                who: document.getElementById('edit-task-who').value
+            });
+            closeEditModal();
+            showStatus("✅ MODIFIÉ");
         }
 
         async function deleteTask(id) {
@@ -192,8 +266,15 @@
             document.getElementById('modal-confirm').onclick = async () => {
                 await window.fbMethods.remove(window.fbMethods.ref(window.fbDB, 'taches/' + id));
                 modal.classList.add('hidden');
+                showStatus("🗑️ SUPPRIMÉ");
             };
             document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
+        }
+
+        function showStatus(txt) {
+            const s = document.getElementById('save-status');
+            s.innerText = txt; s.style.opacity = "1";
+            setTimeout(() => s.style.opacity = "0", 2000);
         }
     </script>
 </body>
