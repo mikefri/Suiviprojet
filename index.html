@@ -170,52 +170,63 @@
             });
         }
 
-        function renderGantt(view = currentView) {
-            currentView = view;
-            const chartEl = document.getElementById('gantt-chart');
-            if (projects.length === 0) { chartEl.innerHTML = '<p class="p-20 text-center text-slate-400 italic">Aucun projet actif.</p>'; return; }
+function renderGantt(view = currentView) {
+    currentView = view;
+    const chartEl = document.getElementById('gantt-chart');
+    
+    // Si la base est vide (ce qui est ton cas actuellement)
+    if (!projects || projects.length === 0) { 
+        chartEl.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-20 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p class="italic">Ta base de données est vide.</p>
+                <p class="text-xs">Clique sur "+ Nouveau" pour créer ton premier projet.</p>
+            </div>`;
+        return; 
+    }
 
-            const tasks = projects.map(p => ({
-                id: p.id,
-                name: `${p.name} (${dec(p.owner)})`,
-                start: p.start, 
-                end: p.end, 
-                progress: p.progress || 0
-            }));
+    try {
+        const tasks = projects.map(p => ({
+            id: p.id,
+            name: p.name || "Projet sans nom",
+            start: p.start || new Date().toISOString().split('T')[0], 
+            end: p.end || new Date().toISOString().split('T')[0], 
+            progress: p.progress || 0
+        }));
 
-            chartEl.innerHTML = '';
-            gantt = new Gantt("#gantt-chart", tasks, {
-                language: 'fr', 
-                view_mode: view, 
-                bar_height: 35,
-                // CLIC BARRE -> LISTE TÂCHES
-                on_click: task => {
-                    window.location.href = `liste-taches.html?id=${task.id}`;
-                },
-                // GLISSER BARRE -> UPDATE FIREBASE
-                on_date_change: (task, start, end) => updateQuick(task.id, { 
-                    start: start.toISOString().split('T')[0], 
-                    end: end.toISOString().split('T')[0] 
-                }),
-                on_progress_change: (task, progress) => updateQuick(task.id, { progress })
+        chartEl.innerHTML = '';
+        gantt = new Gantt("#gantt-chart", tasks, {
+            language: 'fr', 
+            view_mode: view, 
+            bar_height: 35,
+            on_click: task => {
+                // ATTENTION : Vérifie que ce nom de fichier est EXACTEMENT le même que le tien
+                window.location.href = `liste_taches.html?id=${task.id}`;
+            },
+            on_date_change: (task, start, end) => updateQuick(task.id, { 
+                start: start.toISOString().split('T')[0], 
+                end: end.toISOString().split('T')[0] 
+            }),
+            on_progress_change: (task, progress) => updateQuick(task.id, { progress })
+        });
+
+        // Rendre les noms cliquables pour l'édition
+        setTimeout(() => {
+            document.querySelectorAll('.gantt .grid-row text').forEach((el, index) => {
+                el.style.cursor = "pointer";
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    if(projects[index]) editProject(projects[index].id);
+                };
             });
+        }, 200);
 
-            // GESTION DU CLIC SUR LE NOM (pour éditer le projet)
-            setTimeout(() => {
-                document.querySelectorAll('.gantt .grid-row text').forEach((el, index) => {
-                    el.onclick = (e) => {
-                        e.stopPropagation();
-                        if(projects[index]) editProject(projects[index].id);
-                    };
-                });
-                
-                // Couleurs personnalisées
-                projects.forEach(p => {
-                    const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
-                    if (bar) bar.style.setProperty('fill', getColor(p.owner), 'important');
-                });
-            }, 100);
-        }
+    } catch (e) {
+        console.error("Erreur de rendu Gantt:", e);
+    }
+}
 
         async function updateQuick(id, data) {
             await window.fbMethods.update(window.fbMethods.ref(window.fbDB, 'projects/' + id), data);
