@@ -2,8 +2,32 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion des Responsables - Sécurisé</title>
+    <title>Gestion des Responsables - Firebase</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfFtIqMSOddPS6NG4AQqDJ2W3KaBfKzUE",
+            authDomain: "pilotage-gantt.firebaseapp.com",
+            databaseURL: "https://pilotage-gantt-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "pilotage-gantt",
+            storageBucket: "pilotage-gantt.firebasestorage.app",
+            messagingSenderId: "1064606456262",
+            appId: "1:1064606456262:web:39e19391518d3cab93fac7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Export pour le script classique
+        window.fbDB = db;
+        window.fbMethods = { ref, set, onValue, remove };
+        
+        loadRespos();
+    </script>
 </head>
 <body class="bg-[#F1F5F9] text-slate-900 font-sans">
 
@@ -12,50 +36,38 @@
         <h1 class="text-xl font-bold flex items-center gap-2">
             <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
         </h1>
-
         <div id="workflow-status" class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500">
-            <span id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
-            <span id="workflow-text">ACTIONS : PRET</span>
+            <span id="workflow-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="workflow-text">BASE DE DONNÉES : CONNECTÉE</span>
         </div>
     </div>
-
     <div class="flex-1"></div>
-
     <div class="flex items-center gap-4">
         <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
-        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">
-            ← Retour au Planning
-        </a>
+        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">← Retour au Planning</a>
     </div>
 </nav>
 
+<main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mt-10">
+    <h1 class="text-2xl font-bold mb-2">Gestion d'Équipe</h1>
+    <p class="text-slate-500 text-sm mb-8">Les noms ajoutés ici seront encodés en temps réel dans Firebase.</p>
 
-        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
-    </nav>
+    <div class="flex gap-2 mb-10">
+        <input type="text" id="new-respo-name" placeholder="Nom du responsable..." 
+               class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addResponsable()" 
+                class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
+            Ajouter
+        </button>
+    </div>
 
-    <main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mt-10">
-        <h1 class="text-2xl font-bold mb-2">Gestion d'Équipe</h1>
-        <p class="text-slate-500 text-sm mb-8">Les noms ajoutés ici seront encodés (cachés)</p>
+    <div id="respo-list" class="space-y-3"></div>
+</main>
 
-        <div class="flex gap-2 mb-10">
-            <input type="text" id="new-respo-name" placeholder="Nom du responsable..." 
-                   class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-            <button onclick="addResponsable()" 
-                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
-                Ajouter
-            </button>
-        </div>
-
-        <div id="respo-list" class="space-y-3">
-            </div>
-    </main>
-        
-    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+<div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-200 scale-95 transition-transform duration-200">
         <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4 mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
         </div>
         <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 mb-2">Confirmation</h3>
         <p id="modal-text" class="text-slate-500 text-center text-sm mb-6"></p>
@@ -66,172 +78,99 @@
     </div>
 </div>
 
-    <script>
-        const REPO_NAME = "mikefri/Pilotage_Projet";
-        let responsables = []; // Contiendra les noms encodés (Base64)
+<script>
+    let responsables = [];
 
-        // --- ENCODAGE / DÉCODAGE (Gestion des accents) ---
-        function encodeName(name) {
-            return btoa(unescape(encodeURIComponent(name)));
+    // --- ENCODAGE / DÉCODAGE ---
+    function encodeName(name) { return btoa(unescape(encodeURIComponent(name))); }
+    function decodeName(encoded) {
+        try { return decodeURIComponent(escape(atob(encoded))); } 
+        catch (e) { return encoded; }
+    }
+
+    // --- CHARGEMENT LIVE ---
+    function loadRespos() {
+        if (!window.fbMethods) return setTimeout(loadRespos, 100);
+        const { onValue, ref } = window.fbMethods;
+
+        // Écoute les changements dans la branche 'responsables'
+        onValue(ref(window.fbDB, 'responsables'), (snapshot) => {
+            const data = snapshot.val();
+            // Firebase stocke souvent sous forme d'objet {id: valeur}, on convertit en tableau
+            responsables = data ? Object.values(data) : [];
+            renderList();
+        });
+    }
+
+    function renderList() {
+        const list = document.getElementById('respo-list');
+        if (responsables.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-400 italic py-4">Aucun responsable enregistré.</p>';
+            return;
         }
 
-        function decodeName(encoded) {
-            try {
-                return decodeURIComponent(escape(atob(encoded)));
-            } catch (e) {
-                return encoded; // Retourne brut si pas encodé (pour la transition)
-            }
-        }
-
-        // --- CHARGEMENT ---
-        async function loadRespos() {
-            try {
-                const res = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
-                if (res.ok) {
-                    responsables = await res.json();
-                    renderList();
-                }
-            } catch (e) { console.error("Erreur de chargement"); }
-        }
-
-        // --- AFFICHAGE (On décode pour l'humain) ---
-        function renderList() {
-            const list = document.getElementById('respo-list');
-            if (responsables.length === 0) {
-                list.innerHTML = '<p class="text-center text-slate-400 italic py-4">Aucun responsable enregistré.</p>';
-                return;
-            }
-
-            list.innerHTML = responsables.map(r => {
-                const dName = decodeName(r);
-                return `
-                    <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
-                            <span class="font-bold text-slate-700">${dName}</span>
-                        </div>
-                        <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
+        list.innerHTML = responsables.map(r => {
+            const dName = decodeName(r);
+            return `
+                <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
+                        <span class="font-bold text-slate-700">${dName}</span>
                     </div>
-                `;
-            }).join('');
+                    <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // --- ACTIONS ---
+    async function addResponsable() {
+        const input = document.getElementById('new-respo-name');
+        const name = input.value.trim();
+        if(!name) return;
+
+        const encoded = encodeName(name);
+        if(responsables.includes(encoded)) {
+            alert("Ce responsable existe déjà.");
+            return;
         }
 
-        // --- ACTIONS ---
-        async function addResponsable() {
-            const input = document.getElementById('new-respo-name');
-            const name = input.value.trim();
-            
-            if(!name) return;
-            
-            const encoded = encodeName(name);
-            if(responsables.includes(encoded)) {
-                alert("Ce responsable existe déjà.");
-                return;
+        const { set, ref } = window.fbMethods;
+        // On utilise l'ID encodé comme clé pour éviter les doublons
+        await set(ref(window.fbDB, 'responsables/' + encoded), encoded);
+        
+        input.value = '';
+        showStatus("✅ AJOUTÉ");
+    }
+
+    function removeRespo(encodedName) {
+        const displayName = decodeName(encodedName);
+        showConfirm(
+            "Supprimer ?", 
+            `Retirer ${displayName} de l'équipe ?`, 
+            async () => {
+                const { remove, ref } = window.fbMethods;
+                await remove(ref(window.fbDB, 'responsables/' + encodedName));
+                showStatus("🗑️ SUPPRIMÉ");
             }
+        );
+    }
 
-            responsables.push(encoded);
-            input.value = '';
-            renderList();
-            await saveToGitHub();
-        }
+    // --- UI UTILS ---
+    function showStatus(txt) {
+        const s = document.getElementById('save-status');
+        s.innerText = txt; s.style.opacity = "1";
+        setTimeout(() => s.style.opacity = "0", 2000);
+    }
 
-function removeRespo(encodedName) {
-    const displayName = decodeName(encodedName);
-    showConfirm(
-        "Supprimer ?", 
-        `Êtes-vous sûr de vouloir retirer ${displayName} de l'équipe ?`, 
-        async () => {
-            responsables = responsables.filter(r => r !== encodedName);
-            renderList();
-            await saveToGitHub();
-        }
-    );
-}
-
-        // --- SAUVEGARDE SUR GITHUB ---
-        async function saveToGitHub() {
-            const token = localStorage.getItem('gh_token');
-            if (!token) {
-                alert("Token GitHub manquant. Configurez-le sur la page Planning.");
-                return;
-            }
-
-            const statusLabel = document.getElementById('save-status');
-            const dot = document.getElementById('workflow-dot');
-            const text = document.getElementById('workflow-text');
-
-            // 1. ÉTAT : EN COURS (Orange)
-            statusLabel.innerText = "⏳ SYNCHRONISATION...";
-            statusLabel.style.opacity = "1";
-            dot.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-            text.innerText = "ACTIONS : SYNC...";
-
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-
-                if (!res.ok) throw new Error("Erreur lors de la récupération du fichier");
-                const file = await res.json();
-
-                const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/responsables.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: "Mise à jour responsables (encodés)",
-                        content: btoa(unescape(encodeURIComponent(JSON.stringify(responsables, null, 2)))),
-                        sha: file.sha
-                    })
-                });
-
-                if (update.ok) {
-                    // 2. ÉTAT : RÉUSSITE (Vert)
-                    statusLabel.innerText = "✅ ENREGISTRÉ";
-                    dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                    text.innerText = "ACTIONS : SUCCESS";
-
-                    setTimeout(() => {
-                        statusLabel.style.opacity = "0";
-                        // 3. RETOUR À L'ÉTAT INITIAL (Gris)
-                        dot.className = "w-2 h-2 rounded-full bg-slate-300";
-                        text.innerText = "ACTIONS : IDLE";
-                    }, 3000);
-                } else {
-                    throw new Error("Échec de la mise à jour GitHub");
-                }
-            } catch (e) {
-                // ÉTAT : ERREUR (Rouge)
-                statusLabel.innerText = "❌ ERREUR";
-                dot.className = "w-2 h-2 rounded-full bg-red-500";
-                text.innerText = "ACTIONS : ERROR";
-                console.error("Détails de l'erreur :", e);
-            }
-        }
-
-        function showConfirm(title, message, onConfirm) {
-    const modal = document.getElementById('custom-modal');
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-text').innerText = message;
-    modal.classList.remove('hidden');
-
-    const btnConfirm = document.getElementById('modal-confirm');
-    const btnCancel = document.getElementById('modal-cancel');
-
-    // Nettoyage des événements précédents
-    const newBtnConfirm = btnConfirm.cloneNode(true);
-    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
-
-    newBtnConfirm.onclick = () => {
-        modal.classList.add('hidden');
-        onConfirm();
-    };
-    btnCancel.onclick = () => modal.classList.add('hidden');
-}
-
-        window.onload = loadRespos;
-    </script>
+    function showConfirm(title, message, onConfirm) {
+        const modal = document.getElementById('custom-modal');
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-text').innerText = message;
+        modal.classList.remove('hidden');
+        document.getElementById('modal-confirm').onclick = () => { modal.classList.add('hidden'); onConfirm(); };
+        document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
+    }
+</script>
 </body>
 </html>
