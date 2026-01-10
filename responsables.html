@@ -8,6 +8,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfFtIqMSOddPS6NG4AQqDJ2W3KaBfKzUE",
@@ -21,15 +22,54 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
 
         // Export pour le script classique
         window.fbDB = db;
         window.fbMethods = { ref, set, onValue, remove };
-        
-        loadRespos();
+
+        // --- GESTION DE LA CONNEXION ---
+        window.login = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                errorEl.classList.add('hidden');
+            } catch (e) {
+                errorEl.innerText = "Identifiants incorrects";
+                errorEl.classList.remove('hidden');
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            if (user) {
+                if (loginScreen) loginScreen.classList.add('hidden');
+                loadRespos(); // Ne charge les données que si connecté
+            } else {
+                if (loginScreen) loginScreen.classList.remove('hidden');
+            }
+        });
     </script>
 </head>
 <body class="bg-[#F1F5F9] text-slate-900 font-sans">
+
+<div id="login-screen" class="fixed inset-0 bg-slate-100 flex items-center justify-center z-[200] hidden">
+    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-slate-200">
+        <div class="text-center mb-8">
+            <span class="bg-indigo-600 text-white p-3 rounded-2xl text-xl font-bold">GP</span>
+            <h1 class="text-2xl font-bold mt-4 text-slate-800">Accès Restreint</h1>
+            <p class="text-slate-500 text-sm">Veuillez vous connecter</p>
+        </div>
+        <div class="space-y-4">
+            <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
+            <input type="password" id="login-password" placeholder="Mot de passe" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
+            <button onclick="login()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Se connecter</button>
+            <p id="login-error" class="text-red-500 text-xs text-center hidden font-bold mt-2"></p>
+        </div>
+    </div>
+</div>
 
 <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center shadow-sm sticky top-0 z-40">
     <div class="flex items-center gap-6">
@@ -81,22 +121,18 @@
 <script>
     let responsables = [];
 
-    // --- ENCODAGE / DÉCODAGE ---
     function encodeName(name) { return btoa(unescape(encodeURIComponent(name))); }
     function decodeName(encoded) {
         try { return decodeURIComponent(escape(atob(encoded))); } 
         catch (e) { return encoded; }
     }
 
-    // --- CHARGEMENT LIVE ---
     function loadRespos() {
         if (!window.fbMethods) return setTimeout(loadRespos, 100);
         const { onValue, ref } = window.fbMethods;
 
-        // Écoute les changements dans la branche 'responsables'
         onValue(ref(window.fbDB, 'responsables'), (snapshot) => {
             const data = snapshot.val();
-            // Firebase stocke souvent sous forme d'objet {id: valeur}, on convertit en tableau
             responsables = data ? Object.values(data) : [];
             renderList();
         });
@@ -123,7 +159,6 @@
         }).join('');
     }
 
-    // --- ACTIONS ---
     async function addResponsable() {
         const input = document.getElementById('new-respo-name');
         const name = input.value.trim();
@@ -136,9 +171,7 @@
         }
 
         const { set, ref } = window.fbMethods;
-        // On utilise l'ID encodé comme clé pour éviter les doublons
         await set(ref(window.fbDB, 'responsables/' + encoded), encoded);
-        
         input.value = '';
         showStatus("✅ AJOUTÉ");
     }
@@ -156,7 +189,6 @@
         );
     }
 
-    // --- UI UTILS ---
     function showStatus(txt) {
         const s = document.getElementById('save-status');
         s.innerText = txt; s.style.opacity = "1";
