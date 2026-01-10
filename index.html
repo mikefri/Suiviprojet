@@ -2,37 +2,37 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Pilotage Projet - Planning Pro</title>
+    <title>Pilotage Projet - Firebase Full Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
 
-<link rel="manifest" href="https://mikefri.github.io/Pilotage_Projet/manifest.json">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" type="image/png" href="icon.png">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(() => console.log("Service Worker Enregistré"));
-  }
-</script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        const firebaseConfig = {
+            apiKey: "TON_API_KEY",
+            authDomain: "pilotage-gantt.firebaseapp.com",
+            databaseURL: "https://pilotage-gantt-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "pilotage-gantt",
+            storageBucket: "pilotage-gantt.appspot.com",
+            messagingSenderId: "TON_ID",
+            appId: "TON_ID"
+        };
 
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    
-    <style>
-        <style>
-    body {
-        background-color: #F1F5F9 !important; /* Force la couleur blanc crème */
-    }
-    
-    .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
-    .resizable-gantt { resize: vertical; overflow: auto; min-height: 500px; max-height: 85vh; width: 100%; border: 2px solid #e2e8f0; background: white; border-radius: 0.75rem; position: relative; }
-    .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-
+        // Export pour le script classique
+        window.fbDB = db;
+        window.fbMethods = { ref, set, onValue, update, remove };
         
+        loadAllData();
+    </script>
+
+    <style>
+        body { background-color: #F1F5F9 !important; }
         .gantt .bar-label { fill: #1e293b; font-weight: 600; font-size: 12px; }
         .resizable-gantt { resize: vertical; overflow: auto; min-height: 500px; max-height: 85vh; width: 100%; border: 2px solid #e2e8f0; background: white; border-radius: 0.75rem; position: relative; }
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
@@ -44,112 +44,16 @@
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-40">
         <div class="flex items-center gap-6">
             <h1 class="text-xl font-bold flex items-center gap-2">
-                <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
+                <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage Live
             </h1>
-
-            
-            <div id="workflow-status" class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500">
-    <span id="workflow-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
-    <span id="workflow-text">ACTIONS : PRET</span>
-</div>
-
-
-            
+            <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-500 transition-all opacity-0 italic"></div>
             <div class="h-6 w-[1px] bg-slate-200"></div>
-            <a href="responsables.html" class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-2">
-                👥 Gestion Équipe
-            </a>
+            <a href="responsables.html" class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-2">👥 Gestion Équipe</a>
         </div>
-        
-        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition-all duration-300 opacity-0 italic"></div>
-        
         <div class="flex gap-3">
-            <button onclick="toggleConfig()" class="text-sm border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition">🔑 Config</button>
             <button onclick="openForm()" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition">+ Nouveau Projet</button>
         </div>
     </nav>
-
-
-
-
-
-
-<div id="help-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 modal-animate border border-slate-200">
-        <div class="flex justify-between items-start mb-6">
-            <h3 class="text-xl font-bold text-slate-800">Guide du Planning</h3>
-            <button onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
-        </div>
-        
-        <div class="space-y-6 overflow-y-auto max-h-[60vh] pr-2">
-            <div>
-                <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-3">Navigation & Paramètres</p>
-                <div class="space-y-4 text-sm text-slate-600">
-                    <div class="flex items-start gap-3">
-                        <span class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] font-bold shrink-0">+ Nouveau</span>
-                        <p><b>Créer un projet :</b> Ouvre un formulaire pour ajouter un nouveau projet au planning.</p>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <span class="border border-slate-300 px-2 py-1 rounded text-[10px] font-bold shrink-0">🔑 Config</span>
-                        <p><b>GitHub :</b> Permet de coller votre "Token" pour que les modifications soient enregistrées sur le serveur.</p>
-                    </div>
-                    <div class="flex items-start gap-3">
-                        <span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold shrink-0">Jour / Mois</span>
-                        <p><b>Vues :</b> Change l'échelle du calendrier (précision au jour ou vue d'ensemble au mois).</p>
-                    </div>
-                </div>
-            </div>
-
-            <hr class="border-slate-100">
-
- <div>
-    <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-3">Gestion Visuelle & Suivi</p>
-    <div class="space-y-4 text-sm text-slate-600">
-        
-        <div class="flex items-start gap-3">
-            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
-                <span class="text-lg">↔️</span>
-            </div>
-            <div>
-                <p><b>Décaler les dates :</b> Cliquez au <u>centre</u> d'une barre et faites-la glisser vers la gauche ou la droite pour changer les dates de début et de fin sans changer la durée.</p>
-            </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
-                <span class="text-lg">↕️</span>
-            </div>
-            <div>
-                <p><b>Ajuster la durée :</b> Cliquez sur le <u>bord droit</u> d'une barre et tirez-le pour prolonger ou raccourcir la durée du projet.</p>
-            </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-            <div class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded shrink-0">
-                <span class="text-lg">📊</span>
-            </div>
-            <div>
-                <p><b>Suivi de l'avancement :</b> Cliquez sur le petit <u>curseur à l'intérieur</u> de la barre pour modifier le pourcentage de progression (%) directement à la souris.</p>
-            </div>
-        </div>
-
-        <div class="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-100 text-[11px] italic text-amber-700">
-            💡 Chaque mouvement de barre enregistre automatiquement les nouvelles données sur le serveur.
-        </div>
-    </div>
-</div>
-        </div>
-
-        <button onclick="closeHelpModal()" class="w-full mt-8 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md">
-            J'ai compris
-        </button>
-    </div>
-</div>
-
-
-
-    
-    
 
     <main class="p-6 max-w-[1920px] mx-auto">
         <div class="flex justify-between items-center mb-4 px-2">
@@ -168,7 +72,7 @@
     <div id="form-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
         <aside class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md">
             <div class="flex justify-between items-center mb-5 border-b pb-2">
-                <h2 id="form-title" class="font-bold text-lg text-slate-800">Détails du Projet</h2>
+                <h2 class="font-bold text-lg text-slate-800">Détails du Projet</h2>
                 <button onclick="closeForm()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
             </div>
             <input type="hidden" id="p-id">
@@ -193,68 +97,29 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Date Début</label><input type="date" id="p-start" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm"></div>
-                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Date Fin</label><input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Début</label><input type="date" id="p-start" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fin</label><input type="date" id="p-end" class="w-full p-2 rounded-lg bg-slate-50 border border-slate-200 text-sm"></div>
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Avancement (%)</label>
-                    <input type="number" id="p-progress" min="0" max="100" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 outline-none">
+                    <input type="number" id="p-progress" min="0" max="100" class="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200">
                 </div>
                 <div class="flex flex-col gap-2 pt-4">
-                    <div id="task-link-container"></div>
                     <button onclick="addOrUpdateProject()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg">Enregistrer</button>
                     <button id="btn-delete" onclick="deleteProject()" class="hidden w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-sm">Supprimer le projet</button>
                 </div>
-                
             </div>
         </aside>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[110] p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-slate-200">
-            <h3 class="text-lg font-bold mb-2">Confirmer la suppression ?</h3>
-            <div class="flex gap-3 mt-6">
-                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 rounded-lg">Annuler</button>
-                <button onclick="confirmDeletion()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold">Supprimer</button>
-            </div>
-        </div>
-    </div>
-
-
-
-    <div id="config-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[120] p-4">
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm text-center">
-            <h2 class="font-bold text-lg text-slate-800 mb-4">Configuration GitHub</h2>
-            <input type="password" id="gh-token" class="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none mb-4" placeholder="Coller votre Token GitHub ici">
-            <div class="flex gap-2">
-                <button onclick="toggleConfig()" class="flex-1 bg-slate-100 py-2 rounded-lg font-bold">Annuler</button>
-                <button onclick="saveSettings()" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg font-bold">Valider</button>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-4 uppercase">Le token est stocké localement dans votre navigateur.</p>
-        </div>
-    </div>
-
-
-    <button onclick="openHelpModal()" 
-        class="fixed bottom-6 right-6 w-12 h-12 flex items-center justify-center rounded-full bg-white border border-slate-200 text-indigo-600 shadow-lg hover:shadow-xl hover:bg-indigo-50 transition-all duration-300 z-[100] group">
-    <span class="text-xl font-bold group-hover:scale-110 transition-transform">?</span>
-</button>
-
     <script>
-        const REPO_NAME = "mikefri/Pilotage_Projet";
-        // COLLE LES DEUX FONCTIONS ICI :
-    function enc(str) { return btoa(unescape(encodeURIComponent(str))); }
-    function dec(str) { 
-        try { return decodeURIComponent(escape(atob(str))); } 
-        catch(e) { return str; } 
-    }
-
         let projects = [];
         let responsables = [];
         let gantt;
         let currentView = 'Day';
-        let projectToDelete = null;
 
+        // --- Tes Fonctions de décodage d'origine ---
+        function dec(str) { try { return decodeURIComponent(escape(atob(str))); } catch(e) { return str; } }
         function getColor(name) {
             let hash = 0;
             if (!name) return '#cbd5e1';
@@ -262,52 +127,26 @@
             return `hsl(${Math.abs(hash) % 360}, 65%, 45%)`;
         }
 
-        async function loadAllData() {
-    // --- NOUVEAU : CHARGEMENT DU CACHE LOCAL (INSTANTANÉ) ---
-    const localP = localStorage.getItem('cache_projects');
-    const localR = localStorage.getItem('cache_responsables');
-    
-    if (localP) projects = JSON.parse(localP);
-    if (localR) responsables = JSON.parse(localR);
-    
-    // On affiche déjà ce qu'on a, pour éviter l'écran vide
-    if (projects.length > 0) renderGantt();
-    if (responsables.length > 0) {
-        document.getElementById('p-owner').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
-    }
+        // --- Chargement Live Firebase ---
+        function loadAllData() {
+            if (!window.fbMethods) return setTimeout(loadAllData, 100);
+            const { onValue, ref } = window.fbMethods;
 
-    try {
-        // 1. Charger Responsables depuis GitHub (avec anti-cache ?t=)
-        const resR = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/responsables.json?t=${Date.now()}`);
-        if (resR.ok) {
-            responsables = await resR.json();
-            // On met à jour le cache local
-            localStorage.setItem('cache_responsables', JSON.stringify(responsables));
-        }
-        
-        const select = document.getElementById('p-owner');
-        if (responsables.length > 0) {
-            select.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
-        } else {
-            select.innerHTML = '<option value="Non assigné">Aucun responsable</option>';
-        }
+            // 1. Charger Responsables
+            onValue(ref(window.fbDB, 'responsables'), (snap) => {
+                const data = snap.val();
+                responsables = data ? Object.values(data) : [];
+                const select = document.getElementById('p-owner');
+                select.innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('') || '<option value="Non assigné">Aucun responsable</option>';
+            });
 
-        // 2. Charger Projets depuis GitHub (avec anti-cache ?t=)
-        const resP = await fetch(`https://raw.githubusercontent.com/${REPO_NAME}/main/data.json?t=${Date.now()}`);
-        if (resP.ok) {
-            projects = await resP.json();
-            // On met à jour le cache local
-            localStorage.setItem('cache_projects', JSON.stringify(projects));
+            // 2. Charger Projets
+            onValue(ref(window.fbDB, 'projects'), (snap) => {
+                const data = snap.val();
+                projects = data ? Object.values(data) : [];
+                renderGantt();
+            });
         }
-        
-        // On rafraîchit le graphique avec les données toutes fraîches de GitHub
-        renderGantt();
-
-    } catch (e) { 
-        console.error("Erreur chargement données", e); 
-        // Si ça échoue, ce n'est pas grave, l'utilisateur voit au moins les données du cache local
-    }
-}
 
         function renderGantt(view = currentView) {
             currentView = view;
@@ -316,12 +155,10 @@
 
             const tasks = projects.map(p => ({
                 id: p.id,
-                // On décode le owner pour l'étiquette sur la barre
                 name: `${p.name} (${dec(p.owner)}) - ${p.progress || 0}%`,
                 start: p.start, 
                 end: p.end, 
-                progress: p.progress || 0,
-                custom_class: 'bar-' + p.id
+                progress: p.progress || 0
             }));
 
             chartEl.innerHTML = '';
@@ -330,90 +167,32 @@
                 view_mode: view, 
                 bar_height: 40,
                 on_click: task => editProject(task.id),
-                on_date_change: (task, start, end) => {
-                    let p = projects.find(i => i.id === task.id);
-                    p.start = start.toISOString().split('T')[0];
-                    p.end = end.toISOString().split('T')[0];
-                    renderGantt(); 
-                    saveToGitHub("data.json", projects);
-                },
-                on_progress_change: (task, progress) => {
-                    let p = projects.find(i => i.id === task.id);
-                    p.progress = progress;
-                    renderGantt(); 
-                    saveToGitHub("data.json", projects);
-                }
+                on_date_change: (task, start, end) => updateQuick(task.id, { 
+                    start: start.toISOString().split('T')[0], 
+                    end: end.toISOString().split('T')[0] 
+                }),
+                on_progress_change: (task, progress) => updateQuick(task.id, { progress })
             });
 
+            // Appliquer tes couleurs personnalisées par responsable
             setTimeout(() => {
                 projects.forEach(p => {
                     const bar = document.querySelector(`[data-id="${p.id}"] .bar-progress`);
-                    // Utilisation de p.owner (valeur encodée) pour garantir la même couleur
                     if (bar) bar.style.setProperty('fill', getColor(p.owner), 'important');
                 });
             }, 50);
         }
 
-        function openForm() { resetForm(); document.getElementById('form-overlay').classList.add('modal-active'); }
-        function closeForm() { document.getElementById('form-overlay').classList.remove('modal-active'); }
-        function closeDeleteModal() { document.getElementById('delete-modal').classList.remove('modal-active'); }
-
-        function editProject(id) {
-            const btnList = `<button onclick="window.location.href='liste_taches.html?id=${id}'" class="w-full bg-slate-800 text-white py-2 rounded-lg text-xs font-bold mb-2">📋 Voir la liste des tâches</button>`;
-            const p = projects.find(i => i.id === id);
-            if(!p) return;
-            document.getElementById('p-id').value = p.id;
-            document.getElementById('p-name').value = p.name;
-            document.getElementById('p-owner').value = p.owner;
-            document.getElementById('p-status').value = p.status || 'En cours';
-            document.getElementById('p-start').value = p.start;
-            document.getElementById('p-end').value = p.end;
-            document.getElementById('p-progress').value = p.progress || 0;
-
-// AJOUT DU BOUTON VERS LA LISTE DES TÂCHES
-            // On l'insère dans un conteneur dédié pour ne pas casser le reste
-            const listContainer = document.getElementById('task-link-container');
-            if (listContainer) {
-                listContainer.innerHTML = `
-                    <button onclick="window.location.href='liste_taches.html?id=${p.id}'" 
-                            class="w-full bg-slate-800 text-white py-3 rounded-lg text-sm font-bold mb-4 flex items-center justify-center gap-2 hover:bg-slate-700 transition shadow-sm">
-                        📋 Ouvrir la Liste des Tâches
-                    </button>
-                `;
-            }
-
-
-            
-            document.getElementById('btn-delete').classList.remove('hidden');
-            document.getElementById('form-overlay').classList.add('modal-active');
-        }
-
-        function resetForm() {
-            document.getElementById('p-id').value = '';
-            document.getElementById('p-name').value = '';
-            document.getElementById('p-progress').value = 0;
-            document.getElementById('p-status').value = 'En cours';
-            document.getElementById('btn-delete').classList.add('hidden');
-            // On vide le lien vers les tâches pour les nouveaux projets
-            if(document.getElementById('task-link-container')) {
-                document.getElementById('task-link-container').innerHTML = '';
-            }
-        }
-
-        function deleteProject() {
-            projectToDelete = document.getElementById('p-id').value;
-            if (projectToDelete) document.getElementById('delete-modal').classList.add('modal-active');
-        }
-
-        async function confirmDeletion() {
-            projects = projects.filter(p => p.id !== projectToDelete);
-            renderGantt(); closeForm(); closeDeleteModal();
-            await saveToGitHub("data.json", projects);
+        async function updateQuick(id, data) {
+            const { update, ref } = window.fbMethods;
+            await update(ref(window.fbDB, 'projects/' + id), data);
+            showStatus("✅ SYNCHRO");
         }
 
         async function addOrUpdateProject() {
-            const id = document.getElementById('p-id').value;
+            const id = document.getElementById('p-id').value || "ID-" + Date.now();
             const pData = {
+                id,
                 name: document.getElementById('p-name').value,
                 owner: document.getElementById('p-owner').value,
                 status: document.getElementById('p-status').value,
@@ -421,148 +200,51 @@
                 end: document.getElementById('p-end').value,
                 progress: parseInt(document.getElementById('p-progress').value) || 0
             };
-            if(!pData.name || !pData.start || !pData.end) return alert("Champs obligatoires.");
-            
-            if(id) {
-                const idx = projects.findIndex(i => i.id === id);
-                projects[idx] = { ...projects[idx], ...pData };
-            } else {
-                projects.push({ id: "ID-" + Date.now(), ...pData });
+
+            const { set, ref } = window.fbMethods;
+            await set(ref(window.fbDB, 'projects/' + id), pData);
+            closeForm();
+            showStatus("✅ ENREGISTRÉ");
+        }
+
+        async function deleteProject() {
+            const id = document.getElementById('p-id').value;
+            if (id && confirm("Supprimer ce projet ?")) {
+                const { remove, ref } = window.fbMethods;
+                await remove(ref(window.fbDB, 'projects/' + id));
+                closeForm();
+                showStatus("🗑️ SUPPRIMÉ");
             }
-            renderGantt(); closeForm(); await saveToGitHub("data.json", projects);
         }
 
-        async function saveToGitHub(filename, data) {
-    const token = localStorage.getItem('gh_token');
-    if (!token) return;
-
-    const statusLabel = document.getElementById('save-status');
-    statusLabel.innerText = "⏳ SYNCHRONISATION...";
-    statusLabel.style.opacity = "1";
-
-    try {
-        // 1. Récupération du SHA actuel pour autoriser la modification
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
-            headers: { 'Authorization': `token ${token}` }
-        });
-
-        if (!res.ok) throw new Error("Fichier introuvable");
-        const file = await res.json();
-
-        // 2. Envoi de la mise à jour
-        const update = await fetch(`https://api.github.com/repos/${REPO_NAME}/contents/${filename}`, {
-            method: 'PUT',
-            headers: { 
-                'Authorization': `token ${token}`, 
-                'Content-Type': 'application/json' 
-            },
-            body: JSON.stringify({
-                message: `Update ${filename}`,
-                // Utilisation de data qui contient déjà les dernières modifs du Gantt
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2)))),
-                sha: file.sha
-            })
-        });
-
-        if (update.ok) {
-            statusLabel.innerText = "✅ ENREGISTRÉ";
-            
-            // IMPORTANT : Surtout ne pas appeler loadAllData() ici.
-            // Le Gantt a déjà été mis à jour visuellement par l'interaction utilisateur.
-            
-            setTimeout(() => {
-                statusLabel.style.opacity = "0";
-            }, 2000);
-        } else {
-            throw new Error("Erreur lors de la mise à jour");
+        // --- Fonctions UI ---
+        function editProject(id) {
+            const p = projects.find(i => i.id === id);
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-owner').value = p.owner;
+            document.getElementById('p-status').value = p.status;
+            document.getElementById('p-start').value = p.start;
+            document.getElementById('p-end').value = p.end;
+            document.getElementById('p-progress').value = p.progress;
+            document.getElementById('btn-delete').classList.remove('hidden');
+            openForm();
         }
-    } catch (e) {
-        console.error("Erreur de sauvegarde:", e);
-        statusLabel.innerText = "❌ ERREUR";
-        // En cas d'erreur, on peut laisser le message rouge pour alerter l'utilisateur
-    }
-}
+
+        function openForm() { document.getElementById('form-overlay').classList.add('modal-active'); }
+        function closeForm() { 
+            document.getElementById('form-overlay').classList.remove('modal-active');
+            document.getElementById('p-id').value = '';
+            document.getElementById('btn-delete').classList.add('hidden');
+        }
 
         function changeView(v) { renderGantt(v); }
-        function toggleConfig() { 
-            document.getElementById('config-overlay').classList.toggle('hidden'); 
-            document.getElementById('config-overlay').classList.toggle('modal-active');
-            
-            // Pré-remplir avec le token actuel s'il existe
-            const savedToken = localStorage.getItem('gh_token');
-            if(savedToken) document.getElementById('gh-token').value = savedToken;
+
+        function showStatus(txt) {
+            const s = document.getElementById('save-status');
+            s.innerText = txt; s.style.opacity = "1";
+            setTimeout(() => s.style.opacity = "0", 2000);
         }
-        function saveSettings() { 
-            const val = document.getElementById('gh-token').value;
-            if(val) {
-                localStorage.setItem('gh_token', val); 
-                toggleConfig(); // Ferme la modale
-                loadAllData();  // Recharge les données avec le nouveau token
-            } else {
-                alert("Veuillez saisir un token.");
-            }
-        }
-
-
-async function checkWorkflows() {
-    const token = localStorage.getItem('gh_token');
-    if (!token) return;
-
-    const dot = document.getElementById('workflow-dot');
-    const text = document.getElementById('workflow-text');
-
-    try {
-        // On ajoute un timestamp à l'URL de l'API pour éviter le cache du navigateur
-        const res = await fetch(`https://api.github.com/repos/${REPO_NAME}/actions/runs?per_page=1&t=${Date.now()}`, {
-            headers: { 
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-        
-        if (!res.ok) return;
-        const data = await res.json();
-        const runs = data.workflow_runs;
-
-        if (runs && runs.length > 0) {
-            const lastRun = runs[0];
-            const status = lastRun.status; // in_progress, queued, completed
-            const conclusion = lastRun.conclusion; // success, failure, etc.
-
-            if (status === "in_progress" || status === "queued") {
-                dot.className = "w-2 h-2 rounded-full bg-blue-500 animate-ping"; // Effet radar bleu
-                text.innerText = "ACTIONS : TRAVAIL EN COURS...";
-            } else if (status === "completed") {
-                if (conclusion === "success") {
-                    dot.className = "w-2 h-2 rounded-full bg-emerald-500";
-                    text.innerText = "ACTIONS : TERMINÉ";
-                } else {
-                    dot.className = "w-2 h-2 rounded-full bg-red-500";
-                    text.innerText = "ACTIONS : ÉCHEC";
-                }
-            }
-        }
-    } catch (e) {
-        console.error("Erreur check workflows", e);
-    }
-}
-
-// Lancer la vérification toutes les 15 secondes
-setInterval(checkWorkflows, 15000);
-// Et au chargement
-checkWorkflows();
-
-
-function openHelpModal() {
-    document.getElementById('help-modal').classList.remove('hidden');
-}
-
-function closeHelpModal() {
-    document.getElementById('help-modal').classList.add('hidden');
-}
-        
-
-        window.onload = loadAllData;
     </script>
 </body>
 </html>
