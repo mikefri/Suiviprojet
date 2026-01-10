@@ -125,7 +125,6 @@
             <div class="text-center mb-8">
                 <span class="bg-indigo-600 text-white p-3 rounded-2xl text-xl font-bold">GP</span>
                 <h1 class="text-2xl font-bold mt-4 text-slate-800">Accès Restreint</h1>
-                <p class="text-slate-500 text-sm">Veuillez vous connecter</p>
             </div>
             <div class="space-y-4">
                 <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
@@ -141,9 +140,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-slate-800">Détails de la tâche</h3>
                 <button onclick="deleteTask()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                 </button>
             </div>
             <div class="space-y-4">
@@ -166,12 +163,25 @@
     </div>
 
     <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
-        <div class="flex items-center gap-6">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
-            </h1>
+        <h1 class="text-xl font-bold flex items-center gap-2">
+            <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Pilotage
+        </h1>
+        <div class="flex items-center gap-4">
+            <div id="delay-container" class="hidden relative group">
+                <div class="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100 flex items-center gap-2 cursor-pointer hover:bg-red-100 transition">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span id="delay-count">0</span> RETARD(S)
+                </div>
+                <div class="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 shadow-xl rounded-xl p-3 hidden group-hover:block z-50">
+                    <p class="text-[10px] font-black uppercase text-slate-400 mb-2 border-b pb-1">Tâches non terminées</p>
+                    <div id="delay-list" class="max-h-40 overflow-y-auto space-y-2"></div>
+                </div>
+            </div>
+            <a href="index.html" class="text-indigo-600 font-bold hover:underline text-sm">← Planning</a>
         </div>
-        <a href="index.html" class="text-indigo-600 font-bold hover:underline text-sm">← Retour au Planning</a>
     </nav>
 
     <main class="max-w-full mx-auto mt-6 px-4">
@@ -197,10 +207,8 @@
                 <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline Interactive</h2>
                 <div id="total-hours" class="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 h</div>
             </div>
-            
             <div id="gantt-scroll-container" class="overflow-x-auto relative">
-                <div id="gantt-container" class="p-6 min-h-[400px] relative gantt-grid pt-10">
-                    </div>
+                <div id="gantt-container" class="p-6 min-h-[400px] relative gantt-grid pt-10"></div>
             </div>
         </section>
     </main>
@@ -247,30 +255,43 @@
             
             const pStart = new Date(currentProject.start);
             const pEnd = new Date(currentProject.end);
+            const today = new Date(); today.setHours(0,0,0,0);
+            
             const diffTime = Math.abs(pEnd - pStart);
             const projectDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
             const availableWidth = scrollContainer.offsetWidth - 200;
             const dayWidth = Math.max(45, availableWidth / projectDurationDays);
-            
-            const timelineWidth = projectDurationDays * dayWidth;
-            container.style.width = `${timelineWidth + 200}px`; 
+            container.style.width = `${(projectDurationDays * dayWidth) + 200}px`; 
             container.style.backgroundSize = `${dayWidth}px 100%`;
 
-            const today = new Date();
-            today.setHours(0,0,0,0);
+            // Ligne Aujourd'hui
             let todayLineHTML = '';
             if (today >= pStart && today <= pEnd) {
                 const daysFromStartToday = (today - pStart) / (24*60*60*1000);
-                const todayPosPx = daysFromStartToday * dayWidth;
-                todayLineHTML = `
-                    <div class="today-line" style="left: calc(140px + ${todayPosPx}px);">
-                        <div class="today-label">Aujourd'hui</div>
-                    </div>`;
+                todayLineHTML = `<div class="today-line" style="left: calc(140px + ${daysFromStartToday * dayWidth}px);"><div class="today-label">Aujourd'hui</div></div>`;
             }
 
-            const projectTasks = allTasks.filter(t => t.projectId === currentProjectId)
-                                         .sort((a, b) => new Date(a.date) - new Date(b.date));
+            const projectTasks = allTasks.filter(t => t.projectId === currentProjectId).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // --- GESTION DES RETARDS ---
+            const delayedTasks = projectTasks.filter(t => !t.done && t.date && new Date(t.date) < today);
+            const delayContainer = document.getElementById('delay-container');
+            if(delayedTasks.length > 0) {
+                delayContainer.classList.remove('hidden');
+                document.getElementById('delay-count').innerText = delayedTasks.length;
+                document.getElementById('delay-list').innerHTML = delayedTasks.map(t => `
+                    <div class="text-[10px] p-2 bg-red-50 rounded border border-red-100">
+                        <div class="font-bold text-red-700">${t.desc}</div>
+                        <div class="flex justify-between text-red-400 italic">
+                            <span>${dec(t.who)}</span>
+                            <span>${new Date(t.date).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                delayContainer.classList.add('hidden');
+            }
 
             let totalHrs = 0;
             const tasksHTML = projectTasks.map((t) => {
@@ -279,16 +300,17 @@
                 const daysFromStart = (tDate - pStart) / (24*60*60*1000);
                 const leftPosPx = Math.max(0, daysFromStart * dayWidth);
                 const dateFr = t.date ? new Date(t.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) : '--/--';
+                const isLate = !t.done && t.date && new Date(t.date) < today;
 
                 return `
                 <div class="gantt-row ${t.done ? 'done' : ''}">
                     <div class="task-label left-0 w-32 truncate font-bold" title="${t.desc}">${t.desc}</div>
-                    <div class="task-bar bg-indigo-600" 
+                    <div class="task-bar ${isLate ? 'bg-red-500 ring-2 ring-red-200' : 'bg-indigo-600'}" 
                          style="left: calc(140px + ${leftPosPx}px); width: 130px;" 
                          onclick="openEditModal('${t.id}')">
                          <span class="truncate mr-1 text-[9px] opacity-90 uppercase">${dec(t.who)}</span>
                     </div>
-                    <div class="absolute text-[9px] font-black text-slate-400" 
+                    <div class="absolute text-[9px] font-black ${isLate ? 'text-red-500' : 'text-slate-400'}" 
                          style="left: calc(280px + ${leftPosPx}px);">${dateFr}</div>
                 </div>`;
             }).join('');
@@ -306,9 +328,7 @@
             const date = document.getElementById('task-date').value || currentProject.start;
             if(!desc) return;
             const taskId = "TASK-" + Date.now();
-            await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'taches/' + taskId), { 
-                id: taskId, projectId: currentProjectId, desc, time, who, date, done: false 
-            });
+            await window.fbMethods.set(window.fbMethods.ref(window.fbDB, 'taches/' + taskId), { id: taskId, projectId: currentProjectId, desc, time, who, date, done: false });
             document.getElementById('task-desc').value = '';
         }
 
@@ -338,8 +358,7 @@
 
         async function deleteTask() {
             if (confirm("Supprimer définitivement cette tâche ?")) {
-                const { remove, ref } = window.fbMethods;
-                await remove(ref(window.fbDB, 'taches/' + currentEditingId));
+                await window.fbMethods.remove(window.fbMethods.ref(window.fbDB, 'taches/' + currentEditingId));
                 closeEditModal();
             }
         }
