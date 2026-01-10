@@ -22,30 +22,14 @@
         appId: "1:1064606456262:web:39e19391518d3cab93fac7"
     };
 
-    // Initialisation
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // Export pour le reste du script
     window.fbDB = db;
     window.fbMethods = { ref, set, onValue, update, remove };
 
-    // --- GESTION DE L'AUTHENTIFICATION (MODE FICHIER UNIQUE) ---
-    onAuthStateChanged(auth, (user) => {
-        const loginScreen = document.getElementById('login-screen');
-        if (user) {
-            // Utilisateur connecté : on cache le formulaire de login
-            if (loginScreen) loginScreen.classList.add('hidden');
-            if (typeof loadAllData === "function") loadAllData();
-            setupConnectionStatus();
-        } else {
-            // Utilisateur déconnecté : on affiche le formulaire de login
-            if (loginScreen) loginScreen.classList.remove('hidden');
-        }
-    });
-
-    // Fonction de connexion
+    // --- LOGIQUE DE CONNEXION ---
     window.login = async () => {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -59,15 +43,21 @@
         }
     };
 
-    // Fonction de déconnexion
-    window.logout = () => {
-        signOut(auth);
-    };
+    window.logout = () => signOut(auth);
 
-    // --- SURVEILLANCE DE LA CONNEXION ---
+    onAuthStateChanged(auth, (user) => {
+        const loginScreen = document.getElementById('login-screen');
+        if (user) {
+            if (loginScreen) loginScreen.classList.add('hidden');
+            if (typeof loadAllData === "function") loadAllData();
+            setupConnectionStatus();
+        } else {
+            if (loginScreen) loginScreen.classList.remove('hidden');
+        }
+    });
+
     function setupConnectionStatus() {
-        const connectedRef = ref(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
+        onValue(ref(db, ".info/connected"), (snap) => {
             const dot = document.getElementById('workflow-dot');
             const txt = document.getElementById('workflow-text');
             if (dot && txt) {
@@ -115,8 +105,8 @@
         <div class="space-y-4">
             <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
             <input type="password" id="login-password" placeholder="Mot de passe" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
-            <button id="login-btn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Se connecter</button>
-            <p id="login-error" class="text-red-500 text-xs text-center hidden font-bold"></p>
+            <button onclick="login()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Se connecter</button>
+            <p id="login-error" class="text-red-500 text-xs text-center hidden font-bold mt-2"></p>
         </div>
     </div>
 </div>
