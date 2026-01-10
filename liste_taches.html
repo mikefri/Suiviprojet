@@ -9,10 +9,8 @@
         .modal-animate { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-        /* Grille de fond dynamique */
         .gantt-grid {
             background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px);
-            /* La taille de la grille est gérée en JS pour s'adapter à la durée */
         }
 
         .gantt-row { 
@@ -48,7 +46,7 @@
             color: #64748b;
             pointer-events: none;
             z-index: 5;
-            background: rgba(248, 250, 252, 0.8);
+            background: rgba(248, 250, 252, 0.9);
             padding-right: 8px;
         }
     </style>
@@ -75,7 +73,6 @@
         window.fbDB = db;
         window.fbMethods = { ref, set, onValue, update, remove };
 
-        // --- GESTION DE LA CONNEXION ---
         window.login = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
@@ -156,8 +153,8 @@
         <a href="index.html" class="text-indigo-600 font-bold hover:underline text-sm">← Retour au Planning</a>
     </nav>
 
-    <main class="max-w-5xl mx-auto mt-10 mb-10 px-4">
-        <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-6">
+    <main class="max-w-full mx-auto mt-6 px-4">
+        <header class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
             <h1 id="project-title" class="text-2xl font-bold text-slate-800 tracking-tight">Chargement...</h1>
             <p id="project-info" class="text-slate-500 text-sm mt-1 italic"></p>
         </header>
@@ -174,11 +171,11 @@
 
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline Adaptative (Nom | Qui | Date)</h2>
+                <h2 class="text-xs font-black uppercase text-slate-400 tracking-widest italic">Timeline Pleine Largeur (Nom | Qui | Date)</h2>
                 <div id="total-hours" class="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">0 h</div>
             </div>
             
-            <div class="overflow-x-auto">
+            <div id="gantt-scroll-container" class="overflow-x-auto">
                 <div id="gantt-container" class="p-6 min-h-[400px] relative gantt-grid"></div>
             </div>
         </section>
@@ -222,17 +219,22 @@
         function renderTasks() {
             if(!currentProject) return;
             const container = document.getElementById('gantt-container');
+            const scrollContainer = document.getElementById('gantt-scroll-container');
             
-            // --- LOGIQUE TIMELINE ADAPTATIVE ---
             const pStart = new Date(currentProject.start);
             const pEnd = new Date(currentProject.end);
             const diffTime = Math.abs(pEnd - pStart);
             const projectDurationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-            const dayWidth = 45; // Largeur en pixels d'une journée
-            const timelineWidth = Math.max(800, projectDurationDays * dayWidth);
+            // --- CALCUL LARGEUR INTELLIGENTE ---
+            // On calcule la largeur disponible de l'écran moins les marges
+            const availableWidth = scrollContainer.offsetWidth - 180; // -180 pour compenser les labels de gauche
+            // On définit dayWidth pour que tout le projet tienne dans l'écran, 
+            // mais on garde un minimum de 40px pour que ce soit lisible.
+            const dayWidth = Math.max(40, availableWidth / projectDurationDays);
             
-            container.style.width = `${timelineWidth + 200}px`; 
+            const timelineWidth = projectDurationDays * dayWidth;
+            container.style.width = `${timelineWidth + 180}px`; 
             container.style.backgroundSize = `${dayWidth}px 100%`;
 
             const projectTasks = allTasks.filter(t => t.projectId === currentProjectId)
@@ -241,31 +243,29 @@
             let totalHrs = 0;
             container.innerHTML = projectTasks.map((t) => {
                 totalHrs += parseFloat(t.time || 0);
-                
                 const tDate = t.date ? new Date(t.date) : pStart;
                 const daysFromStart = (tDate - pStart) / (24*60*60*1000);
                 const leftPosPx = Math.max(0, daysFromStart * dayWidth);
-                
                 const dateFr = t.date ? new Date(t.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) : '--/--';
 
                 return `
                 <div class="gantt-row ${t.done ? 'done' : ''}">
-                    <div class="task-label left-0 w-32 truncate font-bold italic" title="${t.desc}">${t.desc}</div>
-                    
-                    <div class="task-bar bg-indigo-600 hover:bg-indigo-500" 
-                         style="left: calc(140px + ${leftPosPx}px); width: 130px;" 
+                    <div class="task-label left-0 w-32 truncate font-bold" title="${t.desc}">${t.desc}</div>
+                    <div class="task-bar bg-indigo-600" 
+                         style="left: calc(140px + ${leftPosPx}px); width: ${Math.min(120, dayWidth * 0.9)}px;" 
                          onclick="openEditModal('${t.id}')">
-                         <span class="truncate mr-1 text-[9px] opacity-90 uppercase tracking-tighter">${dec(t.who)}</span>
-                         <span class="ml-auto bg-white/20 px-1.5 rounded">${t.time}h</span>
+                         <span class="truncate mr-1 text-[9px] opacity-90 uppercase">${dec(t.who)}</span>
                     </div>
-
                     <div class="absolute text-[9px] font-black text-slate-400" 
-                         style="left: calc(280px + ${leftPosPx}px);">${dateFr}</div>
+                         style="left: calc(150px + ${leftPosPx}px + ${Math.min(120, dayWidth * 0.9)}px);">${dateFr}</div>
                 </div>`;
             }).join('');
 
             document.getElementById('total-hours').innerText = `${totalHrs} h total`;
         }
+
+        // Écouter le redimensionnement de la fenêtre pour ajuster le Gantt
+        window.addEventListener('resize', renderTasks);
 
         async function addTask() {
             const desc = document.getElementById('task-desc').value.trim();
