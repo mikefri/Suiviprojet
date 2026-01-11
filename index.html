@@ -237,11 +237,16 @@
             if (!window.fbMethods) return setTimeout(loadAllData, 200);
             const { onValue, ref } = window.fbMethods;
 
-            onValue(ref(window.fbDB, 'responsables'), (snap) => {
-                const data = snap.val();
-                responsables = data ? Object.values(data) : [];
-                document.getElementById('p-owner').innerHTML = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('') || '<option value="">Aucun membre</option>';
-            });
+onValue(ref(window.fbDB, 'responsables'), (snap) => {
+    const data = snap.val();
+    // On récupère les objets, ou un tableau vide
+    responsables = data ? Object.values(data) : [];
+    
+    // Correction ici : on utilise r.name au lieu de dec(r)
+    document.getElementById('p-owner').innerHTML = responsables.map(r => 
+        `<option value="${r.id}">${r.name}</option>`
+    ).join('') || '<option value="">Aucun membre</option>';
+});;
 
             onValue(ref(window.fbDB, 'projects'), (snap) => {
                 const data = snap.val();
@@ -272,13 +277,19 @@
                 return;
             }
 
-            const tasks = projects.map(p => ({
-                id: p.id,
-                name: `${p.name} (${dec(p.owner)}) - ${p.progress || 0}%`,
-                start: p.start || new Date().toISOString().split('T')[0],
-                end: p.end || new Date().toISOString().split('T')[0],
-                progress: p.progress || 0
-            }));
+const tasks = projects.map(p => {
+    // On cherche le responsable dans notre liste locale pour avoir son nom
+    const respoFound = responsables.find(r => r.id === p.owner);
+    const displayName = respoFound ? respoFound.name : (p.owner || "Inconnu");
+
+    return {
+        id: p.id,
+        name: `${p.name} (${displayName}) - ${p.progress || 0}%`,
+        start: p.start || new Date().toISOString().split('T')[0],
+        end: p.end || new Date().toISOString().split('T')[0],
+        progress: p.progress || 0
+    };
+});
 
             chartEl.innerHTML = '';
             gantt = new Gantt("#gantt-chart", tasks, {
