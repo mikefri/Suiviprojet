@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion des Responsables</title>
+    <title>Gestion des Responsables v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -24,31 +24,27 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // Export pour le script classique
         window.fbDB = db;
-        window.fbMethods = { ref, set, onValue, remove };
+        window.fbMethods = { ref, set, onValue, remove, update };
 
-        // --- GESTION DE LA CONNEXION ---
+        // Connexion
         window.login = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-password').value;
-            const errorEl = document.getElementById('login-error');
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
-                errorEl.classList.add('hidden');
             } catch (e) {
-                errorEl.innerText = "Identifiants incorrects";
-                errorEl.classList.remove('hidden');
+                document.getElementById('login-error').innerText = "Identifiants incorrects";
+                document.getElementById('login-error').classList.remove('hidden');
             }
         };
 
         onAuthStateChanged(auth, (user) => {
-            const loginScreen = document.getElementById('login-screen');
             if (user) {
-                if (loginScreen) loginScreen.classList.add('hidden');
-                loadRespos(); // Ne charge les données que si connecté
+                document.getElementById('login-screen').classList.add('hidden');
+                loadRespos();
             } else {
-                if (loginScreen) loginScreen.classList.remove('hidden');
+                document.getElementById('login-screen').classList.remove('hidden');
             }
         });
     </script>
@@ -60,7 +56,6 @@
         <div class="text-center mb-8">
             <span class="bg-indigo-600 text-white p-3 rounded-2xl text-xl font-bold">GP</span>
             <h1 class="text-2xl font-bold mt-4 text-slate-800">Accès Restreint</h1>
-            <p class="text-slate-500 text-sm">Veuillez vous connecter</p>
         </div>
         <div class="space-y-4">
             <input type="email" id="login-email" placeholder="Email" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none">
@@ -72,121 +67,127 @@
 </div>
 
 <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center shadow-sm sticky top-0 z-40">
-    <div class="flex items-center gap-6">
-        <h1 class="text-xl font-bold flex items-center gap-2">
-            <span class="bg-indigo-600 text-white p-1.5 rounded-lg text-sm">GP</span> Gestion des Responsables
-        </h1>
-        <div id="workflow-status" class="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500">
-            <span id="workflow-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span id="workflow-text">BASE DE DONNÉES : CONNECTÉE</span>
-        </div>
-    </div>
+    <h1 class="text-xl font-bold">Gestion des Responsables</h1>
     <div class="flex-1"></div>
-    <div class="flex items-center gap-4">
-        <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 italic"></div>
-        <a href="index.html" class="text-indigo-600 font-bold flex items-center gap-2 hover:underline">← Retour au Planning</a>
-    </div>
+    <div id="save-status" class="text-[11px] font-bold px-3 py-1 rounded-full border border-slate-200 bg-white opacity-0 transition-all duration-300 mr-4"></div>
+    <a href="index.html" class="text-indigo-600 font-bold hover:underline">← Retour</a>
 </nav>
 
-<main class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mt-10">
-    <h1 class="text-2xl font-bold mb-2">Gestion d'Équipe</h1>
-    <p class="text-slate-500 text-sm mb-8">Les noms ajoutés ici seront encodés en temps réel dans Firebase.</p>
+<main class="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mt-10">
+    <h1 class="text-2xl font-bold mb-6">Équipe de projet</h1>
 
-    <div class="flex gap-2 mb-10">
-        <input type="text" id="new-respo-name" placeholder="Nom du responsable..." 
-               class="flex-1 p-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
-        <button onclick="addResponsable()" 
-                class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
-            Ajouter
-        </button>
+    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8">
+        <input type="hidden" id="edit-id">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="respo-name" placeholder="Nom complet" class="p-3 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="email" id="respo-email" placeholder="Email" class="p-3 rounded-lg border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button id="btn-save" onclick="saveResponsable()" class="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition">Ajouter le responsable</button>
+            <button id="btn-cancel" onclick="resetForm()" class="hidden px-6 py-3 bg-slate-200 text-slate-600 rounded-lg font-bold">Annuler</button>
+        </div>
     </div>
 
-    <div id="respo-list" class="space-y-3"></div>
+    <div id="respo-list" class="space-y-3">
+        </div>
 </main>
 
 <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-200 scale-95 transition-transform duration-200">
-        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4 mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
-        </div>
-        <h3 id="modal-title" class="text-lg font-bold text-center text-slate-800 mb-2">Confirmation</h3>
-        <p id="modal-text" class="text-slate-500 text-center text-sm mb-6"></p>
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+        <h3 id="modal-title" class="text-lg font-bold mb-2"></h3>
+        <p id="modal-text" class="text-slate-500 text-sm mb-6"></p>
         <div class="flex gap-3">
-            <button id="modal-cancel" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">Annuler</button>
-            <button id="modal-confirm" class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow-md">Supprimer</button>
+            <button id="modal-cancel" class="flex-1 px-4 py-2 text-slate-600 border border-slate-200 rounded-xl">Annuler</button>
+            <button id="modal-confirm" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl">Confirmer</button>
         </div>
     </div>
 </div>
 
 <script>
-    let responsables = [];
-
-    function encodeName(name) { return btoa(unescape(encodeURIComponent(name))); }
-    function decodeName(encoded) {
-        try { return decodeURIComponent(escape(atob(encoded))); } 
-        catch (e) { return encoded; }
-    }
+    let responsables = {};
 
     function loadRespos() {
         if (!window.fbMethods) return setTimeout(loadRespos, 100);
         const { onValue, ref } = window.fbMethods;
 
         onValue(ref(window.fbDB, 'responsables'), (snapshot) => {
-            const data = snapshot.val();
-            responsables = data ? Object.values(data) : [];
+            responsables = snapshot.val() || {};
             renderList();
         });
     }
 
     function renderList() {
         const list = document.getElementById('respo-list');
-        if (responsables.length === 0) {
-            list.innerHTML = '<p class="text-center text-slate-400 italic py-4">Aucun responsable enregistré.</p>';
+        const keys = Object.keys(responsables);
+        
+        if (keys.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-400 italic py-4">Aucun membre enregistré.</p>';
             return;
         }
 
-        list.innerHTML = responsables.map(r => {
-            const dName = decodeName(r);
+        list.innerHTML = keys.map(id => {
+            const respo = responsables[id];
             return `
                 <div class="flex justify-between items-center p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
-                        <span class="font-bold text-slate-700">${dName}</span>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-slate-700">${respo.name}</span>
+                        <span class="text-xs text-slate-500">${respo.email || 'Pas d\'email'}</span>
                     </div>
-                    <button onclick="removeRespo('${r}')" class="text-red-400 hover:text-red-600 font-medium text-sm px-3 py-1 rounded-md hover:bg-red-50">Supprimer</button>
+                    <div class="flex gap-2">
+                        <button onclick="editRespo('${id}')" class="text-indigo-500 hover:bg-indigo-50 px-3 py-1 rounded-md text-sm font-bold">Modifier</button>
+                        <button onclick="removeRespo('${id}')" class="text-red-400 hover:bg-red-50 px-3 py-1 rounded-md text-sm">Supprimer</button>
+                    </div>
                 </div>
             `;
         }).join('');
     }
 
-    async function addResponsable() {
-        const input = document.getElementById('new-respo-name');
-        const name = input.value.trim();
-        if(!name) return;
-
-        const encoded = encodeName(name);
-        if(responsables.includes(encoded)) {
-            alert("Ce responsable existe déjà.");
-            return;
-        }
+    async function saveResponsable() {
+        const name = document.getElementById('respo-name').value.trim();
+        const email = document.getElementById('respo-email').value.trim();
+        const editId = document.getElementById('edit-id').value;
+        
+        if(!name) return alert("Le nom est obligatoire");
 
         const { set, ref } = window.fbMethods;
-        await set(ref(window.fbDB, 'responsables/' + encoded), encoded);
-        input.value = '';
-        showStatus("✅ AJOUTÉ");
+        // Si editId existe, on utilise le même ID, sinon on crée un ID basé sur le nom
+        const id = editId || btoa(unescape(encodeURIComponent(name))).replace(/[/+=]/g, "");
+
+        await set(ref(window.fbDB, 'responsables/' + id), {
+            id: id,
+            name: name,
+            email: email
+        });
+
+        resetForm();
+        showStatus(editId ? "✅ MODIFIÉ" : "✅ AJOUTÉ");
     }
 
-    function removeRespo(encodedName) {
-        const displayName = decodeName(encodedName);
-        showConfirm(
-            "Supprimer ?", 
-            `Retirer ${displayName} de l'équipe ?`, 
-            async () => {
-                const { remove, ref } = window.fbMethods;
-                await remove(ref(window.fbDB, 'responsables/' + encodedName));
-                showStatus("🗑️ SUPPRIMÉ");
-            }
-        );
+    function editRespo(id) {
+        const respo = responsables[id];
+        document.getElementById('edit-id').value = id;
+        document.getElementById('respo-name').value = respo.name;
+        document.getElementById('respo-email').value = respo.email || "";
+        
+        document.getElementById('btn-save').innerText = "Enregistrer les modifications";
+        document.getElementById('btn-cancel').classList.remove('hidden');
+        document.getElementById('respo-name').focus();
+    }
+
+    function resetForm() {
+        document.getElementById('edit-id').value = "";
+        document.getElementById('respo-name').value = "";
+        document.getElementById('respo-email').value = "";
+        document.getElementById('btn-save').innerText = "Ajouter le responsable";
+        document.getElementById('btn-cancel').classList.add('hidden');
+    }
+
+    function removeRespo(id) {
+        showConfirm("Supprimer ?", `Retirer ${responsables[id].name} ?`, async () => {
+            const { remove, ref } = window.fbMethods;
+            await remove(ref(window.fbDB, 'responsables/' + id));
+            showStatus("🗑️ SUPPRIMÉ");
+        });
     }
 
     function showStatus(txt) {
