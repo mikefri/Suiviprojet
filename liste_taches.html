@@ -237,21 +237,28 @@
             if (!window.fbMethods) return setTimeout(loadData, 100);
             const { onValue, ref } = window.fbMethods;
 
-            onValue(ref(window.fbDB, 'responsables'), (snap) => {
-                responsables = snap.val() ? Object.values(snap.val()) : [];
-                const options = responsables.map(r => `<option value="${r}">${dec(r)}</option>`).join('');
-                document.getElementById('task-who').innerHTML = options;
-                document.getElementById('edit-task-who').innerHTML = options;
-            });
+onValue(ref(window.fbDB, 'responsables'), (snap) => {
+    // Correction : on récupère les objets {id, name, email}
+    responsables = snap.val() ? Object.values(snap.val()) : [];
+    
+    // On utilise r.id pour la valeur technique et r.name pour l'affichage
+    const options = responsables.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    document.getElementById('task-who').innerHTML = options;
+    document.getElementById('edit-task-who').innerHTML = options;
+});
 
-            onValue(ref(window.fbDB, 'projects/' + currentProjectId), (snap) => {
-                currentProject = snap.val();
-                if(currentProject) {
-                    document.getElementById('project-title').innerText = "📝 " + currentProject.name;
-                    document.getElementById('project-info').innerText = "Responsable : " + dec(currentProject.owner);
-                    renderTasks();
-                }
-            });
+onValue(ref(window.fbDB, 'projects/' + currentProjectId), (snap) => {
+    currentProject = snap.val();
+    if(currentProject) {
+        document.getElementById('project-title').innerText = "📝 " + currentProject.name;
+        
+        // Trouver le nom du responsable du projet
+        const respo = responsables.find(r => r.id === currentProject.owner);
+        const ownerName = respo ? respo.name : currentProject.owner;
+        document.getElementById('project-info').innerText = "Responsable : " + ownerName;
+        renderTasks();
+    }
+});
 
             onValue(ref(window.fbDB, 'taches'), (snap) => {
                 allTasks = snap.val() ? Object.values(snap.val()) : [];
@@ -303,19 +310,23 @@
                 const daysFromStart = (tDate - pStart) / (24*60*60*1000);
                 const leftPosPx = Math.max(0, daysFromStart * dayWidth);
                 const dateFr = t.date ? new Date(t.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'}) : '--/--';
-                const isLate = !t.done && t.date && new Date(t.date) < today;
+const isLate = !t.done && t.date && new Date(t.date) < today;
 
-                return `
-                <div class="gantt-row ${t.done ? 'done' : ''}">
-                    <div class="task-label" title="${t.desc}">${t.desc}</div>
-                    <div class="task-bar ${isLate ? 'bg-red-500 ring-2 ring-red-200' : 'bg-indigo-600'}" 
-                         style="left: calc(160px + ${leftPosPx}px); width: 130px;" 
-                         onclick="openEditModal('${t.id}')">
-                         <span class="truncate mr-1 text-[9px] opacity-90 uppercase">${dec(t.who)}</span>
-                    </div>
-                    <div class="absolute text-[9px] font-black ${isLate ? 'text-red-500' : 'text-slate-400'}" 
-                         style="left: calc(300px + ${leftPosPx}px);">${dateFr}</div>
-                </div>`;
+// Trouver le nom de la personne assignée à la tâche
+const respoTask = responsables.find(r => r.id === t.who);
+const whoName = respoTask ? respoTask.name : t.who;
+
+return `
+<div class="gantt-row ${t.done ? 'done' : ''}">
+    <div class="task-label" title="${t.desc}">${t.desc}</div>
+    <div class="task-bar ${isLate ? 'bg-red-500 ring-2 ring-red-200' : 'bg-indigo-600'}" 
+         style="left: calc(160px + ${leftPosPx}px); width: 130px;" 
+         onclick="openEditModal('${t.id}')">
+         <span class="truncate mr-1 text-[9px] opacity-90 uppercase">${whoName}</span>
+    </div>
+    <div class="absolute text-[9px] font-black ${isLate ? 'text-red-500' : 'text-slate-400'}" 
+         style="left: calc(300px + ${leftPosPx}px);">${dateFr}</div>
+</div>`;
             }).join('');
 
             container.innerHTML = todayLineHTML + tasksHTML;
